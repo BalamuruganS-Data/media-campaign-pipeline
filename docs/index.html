@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Media Campaign Pipeline: Live Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #F1EEE6; --panel: #FBFAF6; --ink: #0F0F12; --muted: #4A4A55; --rule: #0F0F12; --hair: #C9C4B8;
+    --blue: #1530C8; --orange: #FF5A1F; --orange-tint: #FFE2D3; --blue-tint: #E1E5FB;
+    /* names used by the data script */
+    --signal: #1530C8; --test: #FF5A1F; --ok: #1530C8; --ok-bg: #E1E5FB;
+    --warn: #1530C8; --warn-bg: #E1E5FB; --bad: #E2410F; --bad-bg: #FFE2D3; --focus: #FF5A1F;
+    --shadow: 6px 6px 0 var(--ink);
+    color-scheme: light;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #161618; --panel: #1E1E21; --ink: #F1EEE6; --muted: #B4B0A6; --rule: #F1EEE6; --hair: #3A3A40;
+      --blue: #7D8FFF; --orange: #FF7840; --orange-tint: #3B2117; --blue-tint: #1D2240;
+      --signal: #7D8FFF; --test: #FF7840; --ok: #7D8FFF; --ok-bg: #1D2240;
+      --warn: #7D8FFF; --warn-bg: #1D2240; --bad: #FF7840; --bad-bg: #3B2117; --focus: #FF7840;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #161618; --panel: #1E1E21; --ink: #F1EEE6; --muted: #B4B0A6; --rule: #F1EEE6; --hair: #3A3A40;
+    --blue: #7D8FFF; --orange: #FF7840; --orange-tint: #3B2117; --blue-tint: #1D2240;
+    --signal: #7D8FFF; --test: #FF7840; --ok: #7D8FFF; --ok-bg: #1D2240;
+    --warn: #7D8FFF; --warn-bg: #1D2240; --bad: #FF7840; --bad-bg: #3B2117; --focus: #FF7840;
+    color-scheme: dark;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: env(safe-area-inset-top, 0px); }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    font-size: 15px; line-height: 1.6; font-variant-numeric: tabular-nums;
+    overflow-x: hidden;
+  }
+  a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: 4px; }
+  :focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+  .display { font-family: "Bricolage Grotesque", "Arial Narrow", Impact, sans-serif; }
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 48px); }
+
+  /* ---------- Masthead ---------- */
+  .masthead { padding: clamp(28px, 6vw, 72px) 0 0; }
+  .mast-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 0 24px; align-items: end; }
+  .kicker { grid-column: 1 / -1; font-weight: 600; margin: 0 0 12px; display: flex; gap: 12px; align-items: center; }
+  .kicker span { border: 2px solid var(--rule); padding: 2px 10px; }
+  h1 {
+    grid-column: 1 / span 9; grid-row: 2; margin: 0; position: relative; z-index: 1;
+    font-family: "Bricolage Grotesque", "Arial Narrow", Impact, sans-serif;
+    font-weight: 800; font-stretch: 75%; font-size: clamp(3.4rem, 13vw, 11.5rem);
+    line-height: 0.82; letter-spacing: -0.035em;
+  }
+  h1 .o { color: var(--orange); }
+  h1 .line { display: block; }
+  .stamp {
+    grid-column: 8 / -1; grid-row: 2; align-self: end; position: relative; z-index: 2;
+    margin-bottom: -40px; background: var(--orange); color: #0F0F12;
+    border: 3px solid var(--rule); box-shadow: var(--shadow); padding: 20px 22px;
+    transform: rotate(-1.2deg); transition: transform 220ms ease, box-shadow 220ms ease;
+  }
+  .stamp:hover { transform: rotate(0deg) translate(-3px, -3px); box-shadow: 10px 10px 0 var(--ink); }
+  .lede { margin: 0; font-size: 0.95rem; }
+  .refresh { margin: 14px 0 0; display: flex; gap: 10px; align-items: flex-start; font-weight: 600; font-size: 0.9rem; }
+  .refresh .live { flex: none; width: 12px; height: 12px; margin-top: 5px; background: #0F0F12; border-radius: 50%; position: relative; }
+  .refresh .live::after { content: ""; position: absolute; inset: -5px; border: 2px solid #0F0F12; border-radius: 50%; }
+  .refresh.stale .live { background: transparent; border: 2px solid #0F0F12; }
+  .refresh.stale .live::after { display: none; }
+  @media (prefers-reduced-motion: no-preference) {
+    .refresh:not(.stale) .live::after { animation: pulse 1.8s ease-out infinite; }
+    @keyframes pulse { from { transform: scale(0.6); opacity: 1; } to { transform: scale(1.6); opacity: 0; } }
+  }
+  .repo { display: inline-block; margin-top: 14px; font-weight: 600; color: #0F0F12; }
+
+  /* ---------- Filter bar ---------- */
+  .filter-bar {
+    margin-top: clamp(56px, 8vw, 80px); border-top: 3px solid var(--rule); border-bottom: 3px solid var(--rule);
+    display: flex; flex-wrap: wrap; align-items: stretch;
+  }
+  .filter-label { padding: 12px 18px; font-weight: 600; border-right: 3px solid var(--rule); display: flex; align-items: center; }
+  .seg { display: flex; flex-wrap: wrap; }
+  .seg button {
+    font: inherit; font-weight: 600; background: transparent; color: var(--ink); cursor: pointer;
+    border: 0; border-right: 3px solid var(--rule); padding: 12px 18px; position: relative;
+    transition: background 160ms ease, color 160ms ease;
+  }
+  .seg button:hover { background: var(--blue-tint); }
+  .seg button[aria-pressed="true"] { background: var(--blue); color: #FBFAF6; }
+  .seg button[aria-pressed="true"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: -3px; height: 6px; background: var(--orange); }
+
+  .ticker { overflow: hidden; border-bottom: 3px solid var(--rule); background: var(--ink); color: var(--paper); }
+  .ticker-track { display: flex; width: max-content; font-weight: 600; font-size: 0.85rem; padding: 8px 0; }
+  .ticker-track span { padding: 0 28px; white-space: nowrap; }
+  .ticker-track span:nth-child(even) { color: var(--orange); }
+  @media (prefers-reduced-motion: no-preference) {
+    .ticker-track { animation: tick 38s linear infinite; }
+    @keyframes tick { to { transform: translateX(-50%); } }
+  }
+
+  /* ---------- Sections ---------- */
+  .sec { position: relative; padding: clamp(64px, 9vw, 120px) 0 0; }
+  .sec-head { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 0 24px; align-items: end; margin-bottom: 28px; position: relative; }
+  .sec-num {
+    grid-column: 1 / span 3; grid-row: 1 / span 2; align-self: start;
+    font-family: "Bricolage Grotesque", Impact, sans-serif; font-weight: 800; font-stretch: 75%;
+    font-size: clamp(5rem, 14vw, 12rem); line-height: 0.75; color: transparent;
+    -webkit-text-stroke: 2px var(--ink); user-select: none;
+  }
+  .sec h2 {
+    grid-column: 3 / span 8; margin: 0; position: relative; z-index: 1;
+    font-family: "Bricolage Grotesque", Impact, sans-serif; font-weight: 800; font-stretch: 80%;
+    font-size: clamp(2.2rem, 5.4vw, 4.6rem); line-height: 0.92; letter-spacing: -0.02em;
+  }
+  .sec h2 .hl { background: linear-gradient(transparent 62%, var(--orange) 62%, var(--orange) 90%, transparent 90%); }
+  .sub { grid-column: 3 / span 7; margin: 14px 0 0; color: var(--muted); max-width: 64ch; }
+
+  /* ---------- KPI grid: asymmetric ---------- */
+  .kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border: 3px solid var(--rule); background: var(--panel); box-shadow: var(--shadow); }
+  .kpi { padding: 18px 20px; border-right: 3px solid var(--rule); border-bottom: 3px solid var(--rule); position: relative; transition: background 160ms ease; }
+  .kpi:hover { background: var(--blue-tint); }
+  .kpi .name { font-weight: 600; font-size: 0.85rem; }
+  .kpi .val { font-family: "Bricolage Grotesque", Impact, sans-serif; font-weight: 800; font-stretch: 80%; font-size: clamp(1.6rem, 2.6vw, 2.3rem); line-height: 1.05; margin-top: 6px; }
+  .kpi .hint { color: var(--muted); font-size: 0.78rem; margin-top: 6px; }
+  .kpi:nth-child(1) { grid-column: span 3; grid-row: span 2; background: var(--blue); color: #FBFAF6; display: flex; flex-direction: column; justify-content: space-between; }
+  .kpi:nth-child(1) .val { font-size: clamp(3.2rem, 8vw, 7rem); font-stretch: 75%; letter-spacing: -0.03em; }
+  .kpi:nth-child(1) .hint { color: #D5DBFF; }
+  .kpi:nth-child(1):hover { background: var(--blue); }
+  .kpi:nth-child(4), .kpi:nth-child(7) { border-right: 0; }
+  .kpi:nth-child(8) { grid-column: 1 / -1; border-right: 0; border-bottom: 0; background: var(--orange); color: #0F0F12; display: grid; grid-template-columns: auto 1fr; gap: 4px 24px; align-items: baseline; }
+  .kpi:nth-child(8) .val { grid-row: span 2; font-size: clamp(2.4rem, 5vw, 4rem); margin: 0; }
+  .kpi:nth-child(8) .hint { color: #3A2418; margin: 0; }
+  .kpi:nth-child(8):hover { background: var(--orange); }
+  .caveat { margin: 22px 0 0; padding-left: 16px; border-left: 6px solid var(--orange); font-size: 0.88rem; color: var(--muted); max-width: 90ch; }
+
+  /* ---------- Tables ---------- */
+  .table-scroll { overflow-x: auto; border: 3px solid var(--rule); background: var(--panel); }
+  table { border-collapse: collapse; width: 100%; font-size: 0.86rem; }
+  th, td { padding: 11px 14px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--hair); }
+  th:first-child, td:first-child { text-align: left; }
+  thead th { background: var(--ink); color: var(--paper); font-weight: 600; border-bottom: 0; }
+  tbody tr { transition: background 120ms ease; }
+  tbody tr:hover td { background: var(--blue-tint); }
+  tbody tr:last-child td { border-bottom: 0; }
+  tr.dim td { opacity: 0.35; }
+  tr.attention td { background: var(--orange-tint); }
+  tr.attention td:first-child { box-shadow: inset 6px 0 0 var(--orange); }
+  .left { text-align: left !important; }
+  .platform-table { margin-top: 36px; width: min(100%, 1060px); margin-left: auto; box-shadow: var(--shadow); }
+
+  /* ---------- Panels & charts ---------- */
+  .chart-grid { display: grid; grid-template-columns: 7fr 5fr; gap: 28px; align-items: start; }
+  .chart-grid.single { grid-template-columns: minmax(0, 1fr); }
+  .chart-grid > .panel:nth-child(2) { margin-top: 64px; }
+  .panel { border: 3px solid var(--rule); background: var(--panel); padding: 20px 22px; position: relative; box-shadow: var(--shadow); transition: transform 200ms ease, box-shadow 200ms ease; }
+  .panel:hover { transform: translate(-3px, -3px); box-shadow: 9px 9px 0 var(--ink); }
+  .panel h3 { margin: 0; font-family: "Bricolage Grotesque", Impact, sans-serif; font-weight: 800; font-stretch: 85%; font-size: 1.45rem; line-height: 1.1; }
+  .panel .note { margin: 6px 0 14px; color: var(--muted); font-size: 0.84rem; }
+  .panel-head { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: flex-start; }
+  .mini-seg { border: 3px solid var(--rule); }
+  .mini-seg button { padding: 6px 12px; font-size: 0.82rem; }
+  .mini-seg button:last-child { border-right: 0; }
+  .legend { display: flex; flex-wrap: wrap; gap: 18px; font-size: 0.82rem; margin-bottom: 8px; }
+  .legend i { display: inline-block; width: 18px; height: 6px; vertical-align: middle; margin-right: 8px; }
+  svg.chart { width: 100%; height: auto; display: block; overflow: visible; }
+  svg.chart line:not(.cursor) { stroke: var(--hair); }
+  svg.chart text { fill: var(--muted); font-size: 11px; font-family: "IBM Plex Mono", monospace; }
+  .tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--paper); border: 2px solid var(--orange); padding: 8px 10px; font-size: 0.78rem; white-space: nowrap; display: none; z-index: 3; }
+  .empty { border: 3px dashed var(--rule); padding: 36px; text-align: center; background: var(--panel); font-weight: 500; }
+
+  /* ---------- The netting visual: the page's loudest moment ---------- */
+  .netting { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 0 24px; position: relative; }
+  .netting::before { content: ""; grid-column: 1 / span 5; grid-row: 1 / span 3; background: var(--blue); margin: -24px 0 40px -24px; z-index: 0; }
+  .netting-head {
+    grid-column: 1 / span 9; grid-row: 1; position: relative; z-index: 1; margin: 0; padding: 0 0 0 0;
+    font-family: "Bricolage Grotesque", Impact, sans-serif; font-weight: 800; font-stretch: 78%;
+    font-size: clamp(1.9rem, 4.2vw, 3.6rem); line-height: 0.98; letter-spacing: -0.02em;
+    color: var(--ink); background: var(--paper); border: 3px solid var(--rule); padding: 22px 24px; box-shadow: var(--shadow);
+  }
+  .netting > .note { grid-column: 6 / -1; grid-row: 2; position: relative; z-index: 1; margin: 18px 0 0; color: var(--muted) !important; font-size: 0.84rem; }
+  .net-rows { grid-column: 4 / -1; grid-row: 3; position: relative; z-index: 1; margin-top: 18px; display: grid; gap: 0; border: 3px solid var(--rule); background: var(--panel); box-shadow: var(--shadow); }
+  .net-row { display: grid; grid-template-columns: minmax(180px, 290px) 1fr minmax(110px, 130px); gap: 16px; align-items: center; font-size: 0.84rem; padding: 12px 16px; border-bottom: 1px solid var(--hair); }
+  .net-track { position: relative; height: 22px; }
+  .net-track::before { content: ""; position: absolute; left: 50%; top: -6px; bottom: -6px; width: 2px; background: var(--ink); }
+  .net-bar { position: absolute; top: 2px; height: 18px; transform-origin: left; }
+  .net-bar.pos { background: var(--orange); }
+  .net-bar.neg { background: var(--blue); }
+  .net-bar.total { background: var(--ink); }
+  .net-amt { text-align: right; font-weight: 600; }
+  .net-row.sum { border-bottom: 0; border-top: 3px solid var(--rule); font-weight: 600; background: var(--orange-tint); }
+  @media (prefers-reduced-motion: no-preference) {
+    .net-bar { animation: grow 900ms cubic-bezier(.2,.7,.2,1) both; }
+    @keyframes grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  }
+
+  .trust-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 28px 24px; margin-top: clamp(56px, 7vw, 88px); }
+  .trust-grid > article:nth-child(1) { grid-column: 1 / -1; }
+  .trust-grid > article:nth-child(2) { grid-column: 3 / -1; }
+  .status-pill { display: inline-block; padding: 1px 8px; font-size: 0.78rem; font-weight: 600; border: 2px solid currentColor; }
+  .s-match { color: var(--blue); }
+  .s-variance { color: var(--ink); background: var(--orange); border-color: var(--rule); }
+  .s-bad { color: #FBFAF6; background: var(--ink); border-color: var(--ink); }
+  .dup { color: var(--bad); font-weight: 600; }
+  .toggle { display: inline-flex; align-items: center; gap: 10px; font-weight: 600; cursor: pointer; border: 3px solid var(--rule); padding: 8px 12px; background: var(--paper); transition: background 160ms ease; }
+  .toggle:hover { background: var(--orange-tint); }
+  .toggle input { width: 18px; height: 18px; accent-color: var(--orange); margin: 0; }
+  .count { font-weight: 600; margin: 0 0 12px; }
+  .matrix td.cell { text-align: center; }
+  .dot { display: inline-block; width: 14px; height: 14px; vertical-align: middle; }
+  .dot.pass { background: var(--blue); }
+  .dot.fail { background: var(--orange); outline: 3px solid var(--ink); }
+  .dot.none { width: 12px; height: 3px; background: var(--hair); }
+  th.fail-col { background: var(--orange) !important; color: #0F0F12 !important; }
+
+  /* ---------- Footer ---------- */
+  footer { margin-top: clamp(80px, 10vw, 140px); border-top: 3px solid var(--rule); }
+  .foot-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 24px; padding: 32px 0 56px; font-size: 0.84rem; }
+  .foot-grid p { margin: 0; }
+  .foot-grid .sources { grid-column: 1 / span 7; color: var(--muted); }
+  .foot-grid .sig { grid-column: 9 / -1; font-weight: 600; }
+  .foot-grid .sig .big { display: block; font-family: "Bricolage Grotesque", Impact, sans-serif; font-weight: 800; font-stretch: 78%; font-size: 2rem; line-height: 1; margin-bottom: 8px; }
+
+  /* ---------- Scroll reveals (CSS only, where supported) ---------- */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .reveal { animation: rise linear both; animation-timeline: view(); animation-range: entry 0% cover 22%; }
+      @keyframes rise { from { opacity: 0; transform: translateY(48px); } to { opacity: 1; transform: none; } }
+    }
+  }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 1000px) {
+    h1 { grid-column: 1 / -1; }
+    .stamp { grid-column: 4 / -1; grid-row: 3; margin: 24px 0 -32px; }
+    .chart-grid { grid-template-columns: minmax(0, 1fr); }
+    .chart-grid > .panel:nth-child(2) { margin-top: 0; }
+    .trust-grid > article:nth-child(2) { grid-column: 1 / -1; }
+    .net-rows { grid-column: 1 / -1; }
+    .netting > .note { grid-column: 1 / -1; }
+  }
+  @media (max-width: 640px) {
+    body { font-size: 14px; }
+    .stamp { grid-column: 1 / -1; transform: none; }
+    .sec-num { font-size: 4.6rem; grid-column: 1 / -1; grid-row: 1; margin-bottom: 6px; }
+    .sec h2, .sub { grid-column: 1 / -1; }
+    .sec h2 { grid-row: 2; }
+    .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .kpi:nth-child(1) { grid-column: 1 / -1; grid-row: auto; }
+    .kpi:nth-child(n) { border-right: 3px solid var(--rule); }
+    .kpi:nth-child(odd) { border-right: 0; }
+    .kpi:nth-child(1) { border-right: 0; }
+    .kpi:nth-child(8) { grid-column: 1 / -1; grid-template-columns: 1fr; }
+    .kpi:nth-child(8) .val { grid-row: auto; }
+    .netting::before { display: none; }
+    .netting-head { grid-column: 1 / -1; }
+    .net-row { grid-template-columns: 1fr; gap: 6px; }
+    .net-amt { text-align: left; }
+    .filter-label { width: 100%; border-right: 0; border-bottom: 3px solid var(--rule); }
+    .foot-grid .sources, .foot-grid .sig { grid-column: 1 / -1; }
+  }
+</style>
+</head>
+<body>
+<header class="masthead">
+  <div class="wrap">
+    <div class="mast-grid">
+      <p class="kicker"><span>Portfolio project</span>Databricks medallion pipeline</p>
+      <h1><span class="line">Media</span><span class="line">campaign</span><span class="line">pipeline<span class="o">.</span></span></h1>
+      <div class="stamp">
+        <p class="lede">Three advertising sources extracted, cleaned through bronze, silver and gold, checked for quality, and reconciled against finance invoices.</p>
+        <p class="refresh" id="refresh" role="status"><span class="live" aria-hidden="true"></span><span id="refresh-text">Loading the latest pipeline run…</span></p>
+        <a class="repo" href="https://github.com/BalamuruganS-Data/media-campaign-pipeline">View the code on GitHub</a>
+      </div>
+    </div>
+  </div>
+  <div class="wrap">
+    <nav class="filter-bar" role="group" aria-label="Platform filter">
+      <span class="filter-label" id="filter-label">Platform</span>
+      <div class="seg" id="platform-seg" aria-labelledby="filter-label"></div>
+    </nav>
+  </div>
+  <div class="ticker" aria-hidden="true">
+    <div class="ticker-track">
+      <span>Kaggle API extraction</span><span>Bronze: raw, untouched</span><span>Silver: typed and flagged</span><span>Gold: star schema</span><span>Ratios from totals, never averaged</span><span>Six automated quality checks</span><span>Line-level billing reconciliation</span><span>Refreshed by the pipeline</span>
+      <span>Kaggle API extraction</span><span>Bronze: raw, untouched</span><span>Silver: typed and flagged</span><span>Gold: star schema</span><span>Ratios from totals, never averaged</span><span>Six automated quality checks</span><span>Line-level billing reconciliation</span><span>Refreshed by the pipeline</span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="sec" aria-labelledby="perf-h">
+    <div class="sec-head">
+      <span class="sec-num" aria-hidden="true">01</span>
+      <h2 id="perf-h">How campaigns <span class="hl">performed</span></h2>
+      <p class="sub">Every rate is calculated from totals, never by averaging row-level percentages, so small campaigns can’t distort the result.</p>
+    </div>
+    <div class="kpis reveal" id="kpis"></div>
+    <p class="caveat" id="kpi-caveat"></p>
+    <div class="table-scroll platform-table reveal">
+      <table aria-label="KPIs by platform">
+        <thead><tr><th>Platform</th><th>Spend</th><th>Impressions</th><th>Clicks</th><th>CTR</th><th>CPC</th><th>CPM</th><th>CPA</th></tr></thead>
+        <tbody id="platform-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="time-h">
+    <div class="sec-head">
+      <span class="sec-num" aria-hidden="true">02</span>
+      <h2 id="time-h">Over <span class="hl">time</span></h2>
+      <p class="sub">The three sources don’t share a time period, so each trend is shown for its own platform.</p>
+    </div>
+    <div id="trends" class="reveal"></div>
+  </section>
+
+  <section class="sec" aria-labelledby="trust-h">
+    <div class="sec-head">
+      <span class="sec-num" aria-hidden="true">03</span>
+      <h2 id="trust-h">Can the numbers be <span class="hl">trusted?</span></h2>
+      <p class="sub">Platform-reported spend is matched line by line against invoices. The billing feed is simulated with planted discrepancies, and the reconciliation is expected to catch every one of them.</p>
+    </div>
+
+    <article class="netting reveal" id="netting" aria-label="What the billing total hides"></article>
+
+    <div class="trust-grid">
+      <article class="panel reveal">
+        <div class="panel-head">
+          <div>
+            <h3>Billing reconciliation</h3>
+            <p class="note">Delivered spend against billed amount per platform and month, with a $1 tolerance for rounding.</p>
+          </div>
+          <label class="toggle"><input type="checkbox" id="attention-only"> Show only lines needing attention</label>
+        </div>
+        <p class="count" id="recon-count"></p>
+        <div class="table-scroll">
+          <table aria-label="Billing reconciliation">
+            <thead><tr><th>Platform</th><th class="left">Month</th><th>Delivered</th><th>Billed</th><th>Variance</th><th class="left">Invoice</th><th class="left">Status</th></tr></thead>
+            <tbody id="recon-body"></tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="panel reveal">
+        <h3>Automated data quality checks</h3>
+        <p class="note" id="dq-summary"></p>
+        <div class="table-scroll">
+          <table class="matrix" aria-label="Data quality check history">
+            <thead id="dq-head"></thead>
+            <tbody id="dq-body"></tbody>
+          </table>
+        </div>
+        <p class="note" style="margin:14px 0 0" id="dq-foot"></p>
+      </article>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot-grid">
+    <p class="sources">Sources: two public Kaggle datasets (social ads and daily A/B campaigns, August 2019) and one fictional Kaggle dataset used for volume (multichannel, 2021). The finance billing feed is simulated. Platforms come from unrelated datasets with different definitions, so compare trends within a platform rather than values across platforms. This page reads the pipeline’s latest export; the full analysis lives in the Power BI report in the repository.</p>
+    <p class="sig"><span class="big">Balamurugan S</span>Data engineer, Chennai<br><a href="https://github.com/BalamuruganS-Data/media-campaign-pipeline">Repository</a> / <a href="https://linkedin.com/in/-bala-murugan">LinkedIn</a></p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------- Saved snapshot: used only when the live export can't be loaded ----------
+  const SNAPSHOT = (function () {
+    const C = [[2280,82702,7016,618],[1757,121040,8110,511],[2343,131711,6508,372],[1940,72878,3065,340],[1835,null,null,null],
+      [3083,109076,4028,764],[2544,142123,2640,499],[1900,90939,7260,462],[2813,121332,6198,501],[2149,117624,2277,734],
+      [2490,115247,8137,475],[2319,116639,2993,794],[2697,82847,6554,766],[1875,145248,4521,788],[2774,132845,4896,366],
+      [2024,71274,5224,438],[2177,119612,6628,222],[1876,108452,7253,243],[2596,107890,3706,542],[2675,113430,2578,299],
+      [1803,74654,5691,800],[2939,105705,6843,387],[2496,129880,4410,766],[1892,72515,4085,585],[1962,117006,4234,386],
+      [2233,124897,5435,251],[2061,104678,4941,605],[2421,141654,6287,643],[2375,92029,8127,334],[2324,111306,4658,670]];
+    const T = [[3008,39550,3038,255],[2542,100719,4657,677],[2365,70263,7885,578],[2710,78451,4216,340],[2297,114295,5863,768],
+      [2458,42684,7488,488],[2838,53986,4221,890],[2916,33669,7184,431],[2652,45511,8259,845],[2790,95054,8125,275],
+      [2420,83633,3750,668],[2831,124591,8264,709],[1972,65827,7568,812],[2537,56304,3993,340],[2516,94338,4993,398],
+      [3076,106584,6800,487],[1968,95843,7910,238],[1979,53632,6909,257],[2626,22521,7617,512],[2712,39470,6050,730],
+      [3112,133771,5471,245],[2899,34752,4431,276],[2407,60286,5077,473],[2078,36650,7156,269],[2928,120576,3596,651],
+      [2311,80841,3820,284],[2915,111469,6435,771],[2247,54627,8144,721],[2805,67444,7651,677],[1977,120203,4399,572]];
+    const daily = [];
+    [["Control Campaign", C], ["Test Campaign", T]].forEach(([name, rows]) => rows.forEach((r, i) => daily.push({
+      campaign: name, date: "2019-08-" + String(i + 1).padStart(2, "0"),
+      spend: r[0], impressions: r[1], clicks: r[2], conversions: r[3] })));
+    const months = [212138826,191464820,211892603,205452322,211663415,205516710,212239503,213545454,206273900,212709908,205504738,212476409];
+    const mm = months.map((v, i) => ({ month: "2021-" + String(i + 1).padStart(2, "0"), spend: v }));
+    const recon = [
+      { platform: "daily_campaign_platform", billing_month: "2019-08", delivered_spend: 145545, billed_amount: 143710, has_duplicate_invoice: false, status: "VARIANCE" },
+      { platform: "social_platform", billing_month: "UNDATED", delivered_spend: 58705.23, billed_amount: 58705.23, has_duplicate_invoice: false, status: "MATCH" }
+    ];
+    mm.forEach((m, i) => recon.push({ platform: "multichannel_platform", billing_month: m.month, delivered_spend: m.spend,
+      billed_amount: i === 2 ? 217189918.08 : (i === 11 ? null : m.spend), has_duplicate_invoice: i === 6,
+      status: i === 2 ? "VARIANCE" : (i === 11 ? "DELIVERED_NOT_BILLED" : "MATCH") }));
+    recon.push({ platform: "multichannel_platform", billing_month: "2022-01", delivered_spend: null, billed_amount: 15000, has_duplicate_invoice: false, status: "BILLED_NOT_DELIVERED" });
+    const exp = { daily_rows_bronze_vs_silver: 60, social_rows_bronze_vs_silver: 1143, multichannel_rows_bronze_vs_silver: 200000,
+                  null_dates_non_social: 0, spend_silver_vs_fact: 2501082858.23, orphan_campaigns: 0 };
+    const runs = { "13:34:47": ["daily_rows_bronze_vs_silver", "spend_silver_vs_fact"],
+                   "13:40:48": ["multichannel_rows_bronze_vs_silver", "social_rows_bronze_vs_silver"],
+                   "13:48:30": ["daily_rows_bronze_vs_silver", "multichannel_rows_bronze_vs_silver", "orphan_campaigns", "social_rows_bronze_vs_silver", "spend_silver_vs_fact"],
+                   "13:50:45": Object.keys(exp), "13:53:01": Object.keys(exp), "13:55:16": Object.keys(exp) };
+    const dq = [];
+    Object.entries(runs).forEach(([t, checks]) => checks.forEach(c => {
+      const fail = t === "13:53:01" && c === "daily_rows_bronze_vs_silver";
+      dq.push({ run_at: "2026-11-11T" + t + "Z", check_name: c, expected: exp[c], actual: fail ? 59 : exp[c], status: fail ? "FAIL" : "PASS" });
+    }));
+    return {
+      generated_at: "2026-11-11T13:55:16Z",
+      platforms: [
+        { platform: "daily_campaign_platform", name: "Daily Campaign", spend: 145545, spend_complete: 143710, impressions: 5414777, clicks: 335273, conversions: 30798 },
+        { platform: "social_platform", name: "Social", spend: 58705.23, spend_complete: 58705.23, impressions: 213434828, clicks: 38165, conversions: 3264 },
+        { platform: "multichannel_platform", name: "Multichannel", spend: 2500878608, spend_complete: 2500878608, impressions: 1101460304, clicks: 109954406, conversions: null }
+      ],
+      daily, multichannel_monthly: mm, reconciliation: recon, dq_results: dq
+    };
+  })();
+
+  // ---------- Formatting ----------
+  const usd = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const usdCompact = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", notation: "compact", maximumFractionDigits: 2 });
+  const num = new Intl.NumberFormat("en-US");
+  const numCompact = new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 });
+  const money = v => v == null ? "–" : (Math.abs(v) >= 1e6 ? usdCompact.format(v) : usd.format(v));
+  const pct = v => v == null ? "–" : (v * 100).toFixed(v * 100 < 0.1 ? 3 : 2) + "%";
+  const div = (a, b) => (b == null || b === 0 || a == null) ? null : a / b;
+  const signedMoney = v => (v > 0 ? "+" : v < 0 ? "−" : "") + money(Math.abs(v));
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const monthLabel = m => /^\d{4}-\d{2}$/.test(m) ? MONTHS[+m.slice(5) - 1] + " " + m.slice(0, 4) : (m === "UNDATED" ? "Undated" : m);
+  const fmtStamp = iso => {
+    const d = new Date(iso);
+    if (isNaN(d)) return iso;
+    return d.toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "UTC" }) + " UTC";
+  };
+
+  // ---------- Load the latest export, fall back to the snapshot ----------
+  fetch("data/dashboard.json", { cache: "no-store" })
+    .then(r => r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status)))
+    .then(d => init(d, false))
+    .catch(() => init(SNAPSHOT, true));
+
+  function init(DATA, isSnapshot) {
+    const status = document.getElementById("refresh");
+    document.getElementById("refresh-text").textContent = isSnapshot
+      ? "Showing a saved snapshot from " + fmtStamp(DATA.generated_at) + ". The live export couldn’t be loaded."
+      : "Live data from the latest pipeline run, refreshed " + fmtStamp(DATA.generated_at) + ".";
+    if (isSnapshot) status.classList.add("stale");
+
+    const PREFERRED = ["daily_campaign_platform", "social_platform", "multichannel_platform"];
+    const PLATFORMS = {};
+    DATA.platforms.forEach(p => { PLATFORMS[p.platform] = p; });
+    const ORDER = Object.keys(PLATFORMS).sort((a, b) =>
+      (PREFERRED.indexOf(a) + 1 || 99) - (PREFERRED.indexOf(b) + 1 || 99));
+    const nameOf = k => (PLATFORMS[k] && PLATFORMS[k].name) || k;
+
+    // KPI logic: ratios from totals; incomplete-day spend excluded from cost ratios;
+    // CPA spend only from platforms that report conversions.
+    function kpis(keys) {
+      const t = { spend: 0, sc: 0, imp: 0, clk: 0, conv: 0, cpaSpend: 0, hasConv: false };
+      keys.forEach(k => {
+        const p = PLATFORMS[k];
+        t.spend += +p.spend || 0; t.sc += +p.spend_complete || 0; t.imp += +p.impressions || 0; t.clk += +p.clicks || 0;
+        if (p.conversions != null) { t.conv += +p.conversions; t.cpaSpend += +p.spend_complete || 0; t.hasConv = true; }
+      });
+      return {
+        spend: t.spend, impressions: t.imp, clicks: t.clk, conversions: t.hasConv ? t.conv : null,
+        ctr: div(t.clk, t.imp), cpc: div(t.sc, t.clk), cpm: t.imp ? t.sc / t.imp * 1000 : null,
+        cpa: t.hasConv ? div(t.cpaSpend, t.conv) : null
+      };
+    }
+
+    let current = "all";
+    const seg = document.getElementById("platform-seg");
+    seg.innerHTML = "";
+    [["all", "All platforms"]].concat(ORDER.map(k => [k, nameOf(k)])).forEach(([k, label]) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.textContent = label; b.dataset.key = k;
+      b.addEventListener("click", () => { current = k; render(); });
+      seg.appendChild(b);
+    });
+
+    const CAVEATS = {
+      all: "Totals blend unrelated datasets, and multichannel’s volume dominates them. Pick a platform to see its own figures.",
+      daily_campaign_platform: "Cost ratios exclude days where spend was recorded without any performance data.",
+      social_platform: "Social has no dates, so it appears in totals but not in trends.",
+      multichannel_platform: "Multichannel is a fictional dataset; its CPM is far above real advertising prices, so treat it as engineering practice, not business insight."
+    };
+
+    function renderKpis() {
+      const k = kpis(current === "all" ? ORDER : [current]);
+      const cards = [
+        ["Total spend", money(k.spend), "All spend, including incomplete days"],
+        ["Impressions", numCompact.format(k.impressions), "Times ads were shown"],
+        ["Clicks", numCompact.format(k.clicks), "Times ads were clicked"],
+        ["Conversions", k.conversions == null ? "Not reported" : num.format(k.conversions), k.conversions == null ? "This source has no conversion data" : "Purchases or sign-ups"],
+        ["CTR", pct(k.ctr), "Clicks ÷ impressions"],
+        ["CPC", k.cpc == null ? "–" : usd.format(k.cpc), "Spend ÷ clicks"],
+        ["CPM", k.cpm == null ? "–" : usd.format(k.cpm), "Spend per 1,000 impressions"],
+        ["CPA", k.cpa == null ? "Not available" : usd.format(k.cpa), current === "all" ? "Only platforms that report conversions" : "Spend ÷ conversions"]
+      ];
+      document.getElementById("kpis").innerHTML = cards.map(([n, v, h]) =>
+        `<div class="kpi"><div class="name">${n}</div><div class="val">${v}</div><div class="hint">${h}</div></div>`).join("");
+      document.getElementById("kpi-caveat").textContent = CAVEATS[current] || "";
+      document.getElementById("platform-body").innerHTML = ORDER.map(key => {
+        const r = kpis([key]);
+        const dim = current !== "all" && current !== key ? ' class="dim"' : "";
+        return `<tr${dim}><td>${esc(nameOf(key))}</td><td>${money(r.spend)}</td><td>${num.format(r.impressions)}</td><td>${num.format(r.clicks)}</td>
+          <td>${pct(r.ctr)}</td><td>${r.cpc == null ? "–" : usd.format(r.cpc)}</td><td>${r.cpm == null ? "–" : usd.format(r.cpm)}</td><td>${r.cpa == null ? "–" : usd.format(r.cpa)}</td></tr>`;
+      }).join("");
+    }
+
+    // ---------- Charts ----------
+    const COLORS = ["var(--signal)", "var(--test)", "var(--ok)", "var(--warn)"];
+    function lineChart(series, yFmt, xLabels, label) {
+      const W = 560, H = 230, L = 52, R = 12, T = 10, B = 28;
+      const vals = series.flatMap(s => s.values.filter(v => v != null));
+      const max = (Math.max(...vals) || 1) * 1.08;
+      const x = i => L + i * (W - L - R) / Math.max(xLabels.length - 1, 1);
+      const y = v => T + (H - T - B) * (1 - v / max);
+      let g = "";
+      for (let i = 0; i <= 4; i++) {
+        const v = max * i / 4, yy = y(v);
+        g += `<line x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}" stroke="var(--rule)"/><text x="${L - 8}" y="${yy + 4}" text-anchor="end">${yFmt(v)}</text>`;
+      }
+      const step = Math.max(1, Math.round(xLabels.length / 6));
+      xLabels.forEach((l, i) => { if (i % step === 0) g += `<text x="${x(i)}" y="${H - 8}" text-anchor="middle">${esc(l)}</text>`; });
+      series.forEach(s => {
+        let d = "", pen = false;
+        s.values.forEach((v, i) => { if (v == null) { pen = false; return; } d += (pen ? "L" : "M") + x(i) + " " + y(v) + " "; pen = true; });
+        g += `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2.2" stroke-linejoin="round"/>`;
+      });
+      g += `<line class="cursor" x1="0" x2="0" y1="${T}" y2="${H - B}" stroke="var(--muted)" stroke-dasharray="3 3" style="display:none"/>`;
+      return { svg: `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(label)}">${g}</svg>`, x, L, R, W, n: xLabels.length };
+    }
+
+    function barChart(values, labels, yFmt, label, highlight, tipFmt) {
+      const W = 560, H = 230, L = 52, R = 12, T = 10, B = 28;
+      const max = (Math.max(...values) || 1) * 1.08;
+      const bw = (W - L - R) / values.length;
+      const y = v => T + (H - T - B) * (1 - v / max);
+      let g = "";
+      for (let i = 0; i <= 4; i++) {
+        const v = max * i / 4, yy = y(v);
+        g += `<line x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}" stroke="var(--rule)"/><text x="${L - 8}" y="${yy + 4}" text-anchor="end">${yFmt(v)}</text>`;
+      }
+      values.forEach((v, i) => {
+        const xx = L + i * bw + bw * 0.18, yy = y(v);
+        g += `<rect x="${xx}" y="${yy}" width="${bw * 0.64}" height="${H - B - yy}" rx="2" fill="${highlight(i) || "var(--signal)"}"><title>${esc(tipFmt(i, v))}</title></rect>`;
+        g += `<text x="${L + i * bw + bw / 2}" y="${H - 8}" text-anchor="middle">${esc(labels[i])}</text>`;
+      });
+      return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(label)}">${g}</svg>`;
+    }
+
+    let dailyMetric = "spend";
+    function dailyPanel() {
+      const rows = DATA.daily || [];
+      const dates = [...new Set(rows.map(r => r.date))].sort();
+      const campaigns = [...new Set(rows.map(r => r.campaign))].sort();
+      if (!dates.length) return null;
+      const byKey = {};
+      rows.forEach(r => { byKey[r.campaign + "|" + r.date] = r; });
+      const value = r => !r ? null : (dailyMetric === "spend" ? r.spend : (r.impressions ? r.clicks / r.impressions : null));
+      const series = campaigns.map((c, i) => ({ name: c, color: COLORS[i % COLORS.length], values: dates.map(d => value(byKey[c + "|" + d])) }));
+      const labels = dates.map(d => +d.slice(8) + " " + MONTHS[+d.slice(5, 7) - 1]);
+      const period = MONTHS[+dates[0].slice(5, 7) - 1] + " " + dates[0].slice(0, 4);
+      const fmt = dailyMetric === "spend" ? (v => "$" + numCompact.format(v)) : (v => (v * 100).toFixed(0) + "%");
+      const c = lineChart(series, fmt, labels, "Daily " + dailyMetric + " by campaign, " + period);
+      const gaps = rows.filter(r => r.impressions == null).map(r => +r.date.slice(8) + " " + MONTHS[+r.date.slice(5, 7) - 1]);
+      const panel = document.createElement("div");
+      panel.className = "panel";
+      panel.innerHTML = `
+        <div class="panel-head">
+          <div><h3>Daily Campaign, ${period}</h3><p class="note">The only source with genuine day-by-day delivery.${gaps.length ? " Gaps mark incomplete days (" + esc([...new Set(gaps)].join(", ")) + ")." : ""}</p></div>
+          <div class="seg mini-seg" role="group" aria-label="Metric">
+            <button type="button" data-m="spend" aria-pressed="${dailyMetric === "spend"}">Spend</button>
+            <button type="button" data-m="ctr" aria-pressed="${dailyMetric === "ctr"}">CTR</button>
+          </div>
+        </div>
+        <div class="legend">${series.map(s => `<span><i style="background:${s.color}"></i>${esc(s.name)}</span>`).join("")}</div>
+        ${c.svg}<div class="tip"></div>`;
+      panel.querySelectorAll("[data-m]").forEach(b => b.addEventListener("click", () => { dailyMetric = b.dataset.m; renderTrends(); }));
+      const svg = panel.querySelector("svg"), tip = panel.querySelector(".tip"), cur = svg.querySelector(".cursor");
+      svg.addEventListener("pointermove", evt => {
+        const box = svg.getBoundingClientRect(), sx = (evt.clientX - box.left) * (c.W / box.width);
+        const i = Math.max(0, Math.min(c.n - 1, Math.round((sx - c.L) / ((c.W - c.L - c.R) / Math.max(c.n - 1, 1)))));
+        cur.setAttribute("x1", c.x(i)); cur.setAttribute("x2", c.x(i)); cur.style.display = "";
+        const f = v => v == null ? "no data" : (dailyMetric === "spend" ? usd.format(v) : pct(v));
+        tip.innerHTML = esc(labels[i] + " " + dates[i].slice(0, 4)) + "<br>" + series.map(s => esc(s.name) + ": " + f(s.values[i])).join("<br>");
+        tip.style.display = "block";
+        const pr = panel.getBoundingClientRect();
+        tip.style.left = Math.min(evt.clientX - pr.left + 14, pr.width - tip.offsetWidth - 8) + "px";
+        tip.style.top = (evt.clientY - pr.top - 10) + "px";
+      });
+      svg.addEventListener("pointerleave", () => { tip.style.display = "none"; cur.style.display = "none"; });
+      return panel;
+    }
+
+    function multiPanel() {
+      const rows = (DATA.multichannel_monthly || []).slice().sort((a, b) => a.month < b.month ? -1 : 1);
+      if (!rows.length) return null;
+      const unbilled = new Set((DATA.reconciliation || [])
+        .filter(r => r.platform === "multichannel_platform" && r.status === "DELIVERED_NOT_BILLED").map(r => r.billing_month));
+      const years = [...new Set(rows.map(r => r.month.slice(0, 4)))].join("–");
+      const panel = document.createElement("div");
+      panel.className = "panel";
+      panel.innerHTML = `
+        <h3>Multichannel spend by campaign month, ${years}</h3>
+        <p class="note">One row per campaign, so this shows when campaigns were dated, not how spend flowed day to day.${unbilled.size ? " Red bars are months with no invoice." : ""}</p>
+        ${barChart(rows.map(r => +r.spend), rows.map(r => MONTHS[+r.month.slice(5) - 1]), v => "$" + numCompact.format(v),
+          "Multichannel spend by campaign month", i => unbilled.has(rows[i].month) ? "var(--bad)" : null,
+          (i, v) => monthLabel(rows[i].month) + ": " + usd.format(v))}`;
+      return panel;
+    }
+
+    function renderTrends() {
+      const host = document.getElementById("trends");
+      host.innerHTML = "";
+      const grid = document.createElement("div");
+      grid.className = "chart-grid";
+      const add = el => { if (el) grid.appendChild(el); };
+      if (current === "all" || current === "daily_campaign_platform") add(dailyPanel());
+      if (current === "all" || current === "multichannel_platform") add(multiPanel());
+      if (!grid.children.length) {
+        const e = document.createElement("div");
+        e.className = "empty";
+        e.textContent = current === "social_platform"
+          ? "Social data has no dates, so it can’t be shown over time. Its totals are included in the performance figures above."
+          : "This platform has no dated data to show over time.";
+        grid.appendChild(e);
+      }
+      if (grid.children.length === 1) grid.classList.add("single");
+      host.appendChild(grid);
+      if (current === "all") {
+        const n = document.createElement("p");
+        n.className = "caveat";
+        n.textContent = "Social is left out of trends because its data has no dates.";
+        host.appendChild(n);
+      }
+    }
+
+    // ---------- Reconciliation ----------
+    const RECON = DATA.reconciliation || [];
+    const STATUS = {
+      MATCH: ["Match", "s-match"], VARIANCE: ["Variance", "s-variance"],
+      DELIVERED_NOT_BILLED: ["Delivered, not billed", "s-bad"], BILLED_NOT_DELIVERED: ["Billed, not delivered", "s-bad"]
+    };
+    const needsAttention = r => r.status !== "MATCH" || !!r.has_duplicate_invoice;
+
+    function renderNetting() {
+      const items = [];
+      RECON.forEach(r => {
+        const who = nameOf(r.platform) + ", " + monthLabel(r.billing_month);
+        if (r.status === "VARIANCE") items.push([who + ": billed amount differs", r.billed_amount - r.delivered_spend]);
+        if (r.status === "DELIVERED_NOT_BILLED") items.push([who + ": invoice never received", -r.delivered_spend]);
+        if (r.status === "BILLED_NOT_DELIVERED") items.push([who + ": billed, nothing delivered", +r.billed_amount]);
+        if (r.has_duplicate_invoice) items.push([who + ": invoice received twice", +r.billed_amount]);
+      });
+      const host = document.getElementById("netting");
+      if (!items.length) {
+        host.innerHTML = `<p class="netting-head">Every invoice matches delivered spend in the latest run.</p>`;
+        return;
+      }
+      items.sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
+      const net = items.reduce((a, [, v]) => a + v, 0);
+      const gross = items.reduce((a, [, v]) => a + Math.abs(v), 0);
+      const scale = Math.max(...items.map(([, v]) => Math.abs(v)), Math.abs(net)) || 1;
+      const bar = (v, cls) => {
+        const w = Math.max(Math.abs(v) / scale * 50, 0.6);
+        return `<div class="net-track"><span class="net-bar ${cls}" style="left:${v >= 0 ? 50 : 50 - w}%;width:${w}%"></span></div>`;
+      };
+      host.innerHTML = `
+        <p class="netting-head">At the total level, billed and delivered differ by ${money(Math.abs(net))}. Line by line, ${items.length} problems worth ${money(gross)} sit underneath.</p>
+        <p class="note">Each bar is billed minus delivered. Bars to the right are overbilling, bars to the left are underbilling.</p>
+        <div class="net-rows">
+          ${items.map(([n, v]) => `<div class="net-row"><span>${esc(n)}</span>${bar(v, v >= 0 ? "pos" : "neg")}<span class="net-amt">${signedMoney(v)}</span></div>`).join("")}
+          <div class="net-row sum"><span>What the total shows</span>${bar(net, "total")}<span class="net-amt">${signedMoney(net)}</span></div>
+        </div>`;
+    }
+
+    const attentionBox = document.getElementById("attention-only");
+    attentionBox.onchange = renderRecon;
+    function renderRecon() {
+      const scoped = RECON.filter(r => current === "all" || r.platform === current);
+      const rows = scoped.filter(r => !attentionBox.checked || needsAttention(r))
+        .sort((a, b) => (a.platform + a.billing_month) < (b.platform + b.billing_month) ? -1 : 1);
+      const flagged = scoped.filter(needsAttention).length;
+      document.getElementById("recon-count").textContent =
+        `${flagged} ${flagged === 1 ? "line needs" : "lines need"} attention${current === "all" ? "" : " for " + nameOf(current)}. Showing ${rows.length}.`;
+      document.getElementById("recon-body").innerHTML = rows.map(r => {
+        const variance = r.delivered_spend != null && r.billed_amount != null ? r.billed_amount - r.delivered_spend : null;
+        const [label, cls] = STATUS[r.status] || [r.status, "s-variance"];
+        return `<tr${needsAttention(r) ? ' class="attention"' : ""}>
+          <td>${esc(nameOf(r.platform))}</td><td class="left">${esc(monthLabel(r.billing_month))}</td>
+          <td>${r.delivered_spend == null ? "–" : usd.format(r.delivered_spend)}</td><td>${r.billed_amount == null ? "–" : usd.format(r.billed_amount)}</td>
+          <td>${variance == null ? "–" : (Math.abs(variance) < 0.005 ? usd.format(0) : signedMoney(variance))}</td>
+          <td class="left">${r.has_duplicate_invoice ? '<span class="dup">Duplicate received</span>' : "Single"}</td>
+          <td class="left"><span class="status-pill ${cls}">${esc(label)}</span></td></tr>`;
+      }).join("") || `<tr><td colspan="7" class="left">No lines need attention for this platform.</td></tr>`;
+    }
+
+    // ---------- Data quality matrix ----------
+    function renderDQ() {
+      const dq = DATA.dq_results || [];
+      const runs = [...new Set(dq.map(r => r.run_at))].sort().slice(-8);
+      const checks = [...new Set(dq.map(r => r.check_name))].sort();
+      const cell = {};
+      dq.forEach(r => { cell[r.check_name + "|" + r.run_at] = r; });
+      const latest = runs[runs.length - 1];
+      const latestRows = dq.filter(r => r.run_at === latest);
+      const failed = latestRows.filter(r => r.status !== "PASS").length;
+      const time = iso => { const d = new Date(iso); return isNaN(d) ? iso : d.toISOString().slice(11, 19); };
+      const day = iso => { const d = new Date(iso); return isNaN(d) ? "" : d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" }); };
+      document.getElementById("dq-summary").textContent = latest
+        ? (failed ? `${failed} of ${latestRows.length} checks failed in the latest run (${fmtStamp(latest)}).`
+                  : `All ${latestRows.length} checks passed in the latest run (${fmtStamp(latest)}).`) +
+          ` Each row is a check; each column is a run, newest on the right${runs.length === 8 ? ", showing the last 8 runs" : ""}.`
+        : "No check results yet.";
+      document.getElementById("dq-head").innerHTML = `<tr><th>Check</th>${runs.map(r => {
+        const anyFail = dq.some(x => x.run_at === r && x.status !== "PASS");
+        return `<th class="${anyFail ? "fail-col" : ""}" style="text-align:center">${esc(day(r))}<br>${esc(time(r))}</th>`;
+      }).join("")}</tr>`;
+      document.getElementById("dq-body").innerHTML = checks.map(c => `<tr><td>${esc(c)}</td>${runs.map(r => {
+        const x = cell[c + "|" + r];
+        if (!x) return `<td class="cell"><span class="dot none" title="Not part of this run"></span><span style="position:absolute;left:-9999px">not run</span></td>`;
+        const fail = x.status !== "PASS";
+        const detail = fail ? `Failed: expected ${num.format(x.expected)}, found ${num.format(x.actual)}` : "Passed";
+        return `<td class="cell"><span class="dot ${fail ? "fail" : "pass"}" title="${esc(detail)}"></span><span style="position:absolute;left:-9999px">${fail ? "failed" : "passed"}</span></td>`;
+      }).join("")}</tr>`).join("");
+      const anyHistFail = dq.some(x => x.status !== "PASS");
+      document.getElementById("dq-foot").textContent = anyHistFail
+        ? "Orange marks a failed check. Hover over a dot to see what was expected and what was found. One failure was triggered deliberately, by deleting a row, to prove the checks can fail; the table was then restored with Delta time travel."
+        : "Hover over a dot to see the result of each check.";
+    }
+
+    function render() {
+      seg.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.key === current)));
+      renderKpis(); renderTrends(); renderRecon();
+    }
+
+    renderNetting(); renderDQ(); render();
+  }
+})();
+</script>
+</body>
+</html>
