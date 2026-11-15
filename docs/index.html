@@ -3,750 +3,609 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Media Campaign Pipeline: Live Dashboard</title>
+<meta name="color-scheme" content="only light">
+<title>Media Campaign Insights</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --paper: #F1EEE6; --panel: #FBFAF6; --ink: #0F0F12; --muted: #4A4A55; --rule: #0F0F12; --hair: #C9C4B8;
-    --blue: #1530C8; --orange: #FF5A1F; --orange-tint: #FFE2D3; --blue-tint: #E1E5FB;
-    /* names used by the data script */
-    --signal: #1530C8; --test: #FF5A1F; --ok: #1530C8; --ok-bg: #E1E5FB;
-    --warn: #1530C8; --warn-bg: #E1E5FB; --bad: #E2410F; --bad-bg: #FFE2D3; --focus: #FF5A1F;
-    --shadow: 6px 6px 0 var(--ink);
-    color-scheme: light;
-    box-sizing: border-box;
-    padding-top: env(safe-area-inset-top, 0px);
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-  }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --paper: #161618; --panel: #1E1E21; --ink: #F1EEE6; --muted: #B4B0A6; --rule: #F1EEE6; --hair: #3A3A40;
-      --blue: #7D8FFF; --orange: #FF7840; --orange-tint: #3B2117; --blue-tint: #1D2240;
-      --signal: #7D8FFF; --test: #FF7840; --ok: #7D8FFF; --ok-bg: #1D2240;
-      --warn: #7D8FFF; --warn-bg: #1D2240; --bad: #FF7840; --bad-bg: #3B2117; --focus: #FF7840;
-      color-scheme: dark;
-    }
-  }
-  :root[data-theme="dark"] {
-    --paper: #161618; --panel: #1E1E21; --ink: #F1EEE6; --muted: #B4B0A6; --rule: #F1EEE6; --hair: #3A3A40;
-    --blue: #7D8FFF; --orange: #FF7840; --orange-tint: #3B2117; --blue-tint: #1D2240;
-    --signal: #7D8FFF; --test: #FF7840; --ok: #7D8FFF; --ok-bg: #1D2240;
-    --warn: #7D8FFF; --warn-bg: #1D2240; --bad: #FF7840; --bad-bg: #3B2117; --focus: #FF7840;
-    color-scheme: dark;
+    --bg: #FFFFFF; --card: #FFFFFF; --ink: #1B2430; --muted: #66707D; --line: #E2E6EC; --soft: #F7F9FB;
+    --blue: #2F6FDE; --blue-2: #8FB4F0; --blue-3: #CFE0FA; --blue-4: #EAF1FD;
+    --green: #1F8F55; --green-bg: #E3F4EA; --red: #C93C3C; --red-bg: #FBE7E7; --amber: #B7791F; --amber-bg: #FCF1DC;
+    --grey-bar: #E4E8EE; --focus: #2F6FDE;
+    --c1: #A8E6C3; --c2: #9ED9F5; --c3: #F6E58D; --c4: #F5B7B1; --c5: #C9B6F2; --c6: #F9C98B;
+    color-scheme: only light; box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px);
   }
   *, *::before, *::after { box-sizing: border-box; }
-  html { scroll-behavior: smooth; scroll-padding-top: env(safe-area-inset-top, 0px); }
-  body {
-    margin: 0; background: var(--paper); color: var(--ink);
-    font-family: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-    font-size: 15px; line-height: 1.6; font-variant-numeric: tabular-nums;
-    overflow-x: hidden;
-  }
-  a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: 4px; }
-  :focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
-  .display { font-family: "Bricolage Grotesque", "Arial Narrow", Impact, sans-serif; }
-  .wrap { max-width: 1320px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 48px); }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif; font-size: 14px; line-height: 1.45; font-variant-numeric: tabular-nums; }
+  a { color: var(--blue); }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 0 20px 40px; }
 
-  /* ---------- Masthead ---------- */
-  .masthead { padding: clamp(28px, 6vw, 72px) 0 0; }
-  .mast-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 0 24px; align-items: end; }
-  .kicker { grid-column: 1 / -1; font-weight: 600; margin: 0 0 12px; display: flex; gap: 12px; align-items: center; }
-  .kicker span { border: 2px solid var(--rule); padding: 2px 10px; }
-  h1 {
-    grid-column: 1 / span 9; grid-row: 2; margin: 0; position: relative; z-index: 1;
-    font-family: "Bricolage Grotesque", "Arial Narrow", Impact, sans-serif;
-    font-weight: 800; font-stretch: 75%; font-size: clamp(3.4rem, 13vw, 11.5rem);
-    line-height: 0.82; letter-spacing: -0.035em;
-  }
-  h1 .o { color: var(--orange); }
-  h1 .line { display: block; }
-  .stamp {
-    grid-column: 8 / -1; grid-row: 2; align-self: end; position: relative; z-index: 2;
-    margin-bottom: -40px; background: var(--orange); color: #0F0F12;
-    border: 3px solid var(--rule); box-shadow: var(--shadow); padding: 20px 22px;
-    transform: rotate(-1.2deg); transition: transform 220ms ease, box-shadow 220ms ease;
-  }
-  .stamp:hover { transform: rotate(0deg) translate(-3px, -3px); box-shadow: 10px 10px 0 var(--ink); }
-  .lede { margin: 0; font-size: 0.95rem; }
-  .refresh { margin: 14px 0 0; display: flex; gap: 10px; align-items: flex-start; font-weight: 600; font-size: 0.9rem; }
-  .refresh .live { flex: none; width: 12px; height: 12px; margin-top: 5px; background: #0F0F12; border-radius: 50%; position: relative; }
-  .refresh .live::after { content: ""; position: absolute; inset: -5px; border: 2px solid #0F0F12; border-radius: 50%; }
-  .refresh.stale .live { background: transparent; border: 2px solid #0F0F12; }
-  .refresh.stale .live::after { display: none; }
-  @media (prefers-reduced-motion: no-preference) {
-    .refresh:not(.stale) .live::after { animation: pulse 1.8s ease-out infinite; }
-    @keyframes pulse { from { transform: scale(0.6); opacity: 1; } to { transform: scale(1.6); opacity: 0; } }
-  }
-  .repo { display: inline-block; margin-top: 14px; font-weight: 600; color: #0F0F12; }
+  header.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; background: var(--card); border-bottom: 1px solid var(--line); }
+  body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--card); }
+  .bar-inner { max-width: 1320px; margin: 0 auto; padding: 12px 20px; display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; justify-content: space-between; }
+  .brand { font-weight: 700; font-size: 1.15rem; }
+  .brand small { display: block; font-weight: 400; font-size: 0.8rem; color: var(--muted); }
+  nav.tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+  nav.tabs a { text-decoration: none; color: var(--ink); padding: 7px 14px; border-radius: 7px; border: 1px solid var(--line); font-size: 0.86rem; font-weight: 500; background: var(--card); }
+  nav.tabs a:hover { background: var(--soft); }
+  nav.tabs a[aria-current="page"] { background: var(--blue-4); border-color: var(--blue-2); color: var(--blue); font-weight: 600; }
 
-  /* ---------- Filter bar ---------- */
-  .filter-bar {
-    margin-top: clamp(56px, 8vw, 80px); border-top: 3px solid var(--rule); border-bottom: 3px solid var(--rule);
-    display: flex; flex-wrap: wrap; align-items: stretch;
-  }
-  .filter-label { padding: 12px 18px; font-weight: 600; border-right: 3px solid var(--rule); display: flex; align-items: center; }
-  .seg { display: flex; flex-wrap: wrap; }
-  .seg button {
-    font: inherit; font-weight: 600; background: transparent; color: var(--ink); cursor: pointer;
-    border: 0; border-right: 3px solid var(--rule); padding: 12px 18px; position: relative;
-    transition: background 160ms ease, color 160ms ease;
-  }
-  .seg button:hover { background: var(--blue-tint); }
-  .seg button[aria-pressed="true"] { background: var(--blue); color: #FBFAF6; }
-  .seg button[aria-pressed="true"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: -3px; height: 6px; background: var(--orange); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; box-shadow: 0 1px 3px rgba(27, 36, 48, 0.06); }
+  .card h2 { margin: 0 0 12px; font-size: 0.95rem; font-weight: 600; }
+  .card .hint { color: var(--muted); font-size: 0.8rem; margin: -8px 0 12px; }
+  .row { display: grid; gap: 16px; margin-top: 16px; }
+  .top { grid-template-columns: minmax(0, 1fr) 300px; }
+  .split { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
+  .thirds { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .halves { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
-  .ticker { overflow: hidden; border-bottom: 3px solid var(--rule); background: var(--ink); color: var(--paper); }
-  .ticker-track { display: flex; width: max-content; font-weight: 600; font-size: 0.85rem; padding: 8px 0; }
-  .ticker-track span { padding: 0 28px; white-space: nowrap; }
-  .ticker-track span:nth-child(even) { color: var(--orange); }
-  @media (prefers-reduced-motion: no-preference) {
-    .ticker-track { animation: tick 38s linear infinite; }
-    @keyframes tick { to { transform: translateX(-50%); } }
-  }
+  .kpis { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); padding: 0; }
+  .kpi { padding: 14px 16px; text-align: center; border-right: 1px solid var(--line); display: flex; flex-direction: column; justify-content: center; }
+  .kpi:last-child { border-right: 0; }
+  .kpi .k { font-weight: 600; font-size: 0.82rem; }
+  .kpi .v { font-size: 1.55rem; font-weight: 700; margin-top: 4px; }
+  .kpi .d { font-size: 0.78rem; margin-top: 2px; color: var(--muted); }
+  .up { color: var(--green); } .down { color: var(--red); }
+  .info { font-size: 0.8rem; color: var(--muted); display: flex; flex-direction: column; gap: 6px; justify-content: center; }
+  .info strong { color: var(--ink); font-weight: 600; }
+  .info .live { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--green); margin-right: 6px; }
+  .info.stale .live { background: var(--amber); }
 
-  /* ---------- Sections ---------- */
-  .sec { position: relative; padding: clamp(64px, 9vw, 120px) 0 0; }
-  .sec-head { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 0 24px; align-items: end; margin-bottom: 28px; position: relative; }
-  .sec-num {
-    grid-column: 1 / span 3; grid-row: 1 / span 2; align-self: start;
-    font-family: "Bricolage Grotesque", Impact, sans-serif; font-weight: 800; font-stretch: 75%;
-    font-size: clamp(5rem, 14vw, 12rem); line-height: 0.75; color: transparent;
-    -webkit-text-stroke: 2px var(--ink); user-select: none;
-  }
-  .sec h2 {
-    grid-column: 3 / span 8; margin: 0; position: relative; z-index: 1;
-    font-family: "Bricolage Grotesque", Impact, sans-serif; font-weight: 800; font-stretch: 80%;
-    font-size: clamp(2.2rem, 5.4vw, 4.6rem); line-height: 0.92; letter-spacing: -0.02em;
-  }
-  .sec h2 .hl { background: linear-gradient(transparent 62%, var(--orange) 62%, var(--orange) 90%, transparent 90%); }
-  .sub { grid-column: 3 / span 7; margin: 14px 0 0; color: var(--muted); max-width: 64ch; }
+  .filters { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; margin-top: 16px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { font: inherit; font-size: 0.82rem; padding: 5px 12px; border-radius: 6px; border: 1px solid var(--blue-2); background: var(--blue-4); color: var(--ink); cursor: pointer; }
+  .chip[aria-pressed="true"] { background: var(--blue); border-color: var(--blue); color: #fff; }
+  .chip.plain { border-color: var(--line); background: var(--card); }
+  .chip.plain[aria-pressed="true"] { background: var(--blue-3); color: var(--ink); border-color: var(--blue-2); }
 
-  /* ---------- KPI grid: asymmetric ---------- */
-  .kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border: 3px solid var(--rule); background: var(--panel); box-shadow: var(--shadow); }
-  .kpi { padding: 18px 20px; border-right: 3px solid var(--rule); border-bottom: 3px solid var(--rule); position: relative; transition: background 160ms ease; }
-  .kpi:hover { background: var(--blue-tint); }
-  .kpi .name { font-weight: 600; font-size: 0.85rem; }
-  .kpi .val { font-family: "Bricolage Grotesque", Impact, sans-serif; font-weight: 800; font-stretch: 80%; font-size: clamp(1.6rem, 2.6vw, 2.3rem); line-height: 1.05; margin-top: 6px; }
-  .kpi .hint { color: var(--muted); font-size: 0.78rem; margin-top: 6px; }
-  .kpi:nth-child(1) { grid-column: span 3; grid-row: span 2; background: var(--blue); color: #FBFAF6; display: flex; flex-direction: column; justify-content: space-between; }
-  .kpi:nth-child(1) .val { font-size: clamp(3.2rem, 8vw, 7rem); font-stretch: 75%; letter-spacing: -0.03em; }
-  .kpi:nth-child(1) .hint { color: #D5DBFF; }
-  .kpi:nth-child(1):hover { background: var(--blue); }
-  .kpi:nth-child(4), .kpi:nth-child(7) { border-right: 0; }
-  .kpi:nth-child(8) { grid-column: 1 / -1; border-right: 0; border-bottom: 0; background: var(--orange); color: #0F0F12; display: grid; grid-template-columns: auto 1fr; gap: 4px 24px; align-items: baseline; }
-  .kpi:nth-child(8) .val { grid-row: span 2; font-size: clamp(2.4rem, 5vw, 4rem); margin: 0; }
-  .kpi:nth-child(8) .hint { color: #3A2418; margin: 0; }
-  .kpi:nth-child(8):hover { background: var(--orange); }
-  .caveat { margin: 22px 0 0; padding-left: 16px; border-left: 6px solid var(--orange); font-size: 0.88rem; color: var(--muted); max-width: 90ch; }
+  .treemap { position: relative; width: 100%; aspect-ratio: 5 / 0.95; min-height: 170px; margin-top: 12px; }
+  .tile { position: absolute; border: 2px solid var(--card); border-radius: 4px; padding: 6px 8px; font-size: 0.8rem; overflow: hidden; cursor: pointer; display: flex; flex-direction: column; justify-content: space-between; text-align: left; font: inherit; color: var(--ink); }
+  .tile .t-name { font-weight: 600; font-size: 0.82rem; }
+  .tile .t-val { font-size: 0.78rem; }
+  .tile[aria-pressed="true"] { outline: 2px solid var(--blue); outline-offset: -2px; }
+  .tile.faded { opacity: 0.4; }
 
-  /* ---------- Tables ---------- */
-  .table-scroll { overflow-x: auto; border: 3px solid var(--rule); background: var(--panel); }
-  table { border-collapse: collapse; width: 100%; font-size: 0.86rem; }
-  th, td { padding: 11px 14px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--hair); }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; }
+  .seg button { font: inherit; font-size: 0.8rem; padding: 4px 12px; border: 0; background: var(--card); color: var(--ink); cursor: pointer; }
+  .seg button + button { border-left: 1px solid var(--line); }
+  .seg button[aria-pressed="true"] { background: var(--blue-4); color: var(--blue); font-weight: 600; }
+  .center-toggle { display: flex; justify-content: center; margin-top: 16px; }
+  .center-toggle .seg button { padding: 6px 40px; }
+  .card-head { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+  .card-head h2 { margin: 0; }
+
+  .tbl { overflow: auto; max-height: 360px; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.8rem; }
+  th, td { padding: 6px 8px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
   th:first-child, td:first-child { text-align: left; }
-  thead th { background: var(--ink); color: var(--paper); font-weight: 600; border-bottom: 0; }
-  tbody tr { transition: background 120ms ease; }
-  tbody tr:hover td { background: var(--blue-tint); }
-  tbody tr:last-child td { border-bottom: 0; }
-  tr.dim td { opacity: 0.35; }
-  tr.attention td { background: var(--orange-tint); }
-  tr.attention td:first-child { box-shadow: inset 6px 0 0 var(--orange); }
-  .left { text-align: left !important; }
-  .platform-table { margin-top: 36px; width: min(100%, 1060px); margin-left: auto; box-shadow: var(--shadow); }
+  thead th { position: sticky; top: 0; background: var(--card); font-weight: 600; z-index: 1; }
+  tfoot td { font-weight: 700; border-top: 2px solid var(--ink); border-bottom: 0; }
+  tr.attention td { background: var(--red-bg); }
+  .pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 0.74rem; font-weight: 600; }
+  .p-ok { background: var(--green-bg); color: var(--green); } .p-var { background: var(--amber-bg); color: var(--amber); } .p-bad { background: var(--red-bg); color: var(--red); }
 
-  /* ---------- Panels & charts ---------- */
-  .chart-grid { display: grid; grid-template-columns: 7fr 5fr; gap: 28px; align-items: start; }
-  .chart-grid.single { grid-template-columns: minmax(0, 1fr); }
-  .chart-grid > .panel:nth-child(2) { margin-top: 64px; }
-  .panel { border: 3px solid var(--rule); background: var(--panel); padding: 20px 22px; position: relative; box-shadow: var(--shadow); transition: transform 200ms ease, box-shadow 200ms ease; }
-  .panel:hover { transform: translate(-3px, -3px); box-shadow: 9px 9px 0 var(--ink); }
-  .panel h3 { margin: 0; font-family: "Bricolage Grotesque", Impact, sans-serif; font-weight: 800; font-stretch: 85%; font-size: 1.45rem; line-height: 1.1; }
-  .panel .note { margin: 6px 0 14px; color: var(--muted); font-size: 0.84rem; }
-  .panel-head { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: flex-start; }
-  .mini-seg { border: 3px solid var(--rule); }
-  .mini-seg button { padding: 6px 12px; font-size: 0.82rem; }
-  .mini-seg button:last-child { border-right: 0; }
-  .legend { display: flex; flex-wrap: wrap; gap: 18px; font-size: 0.82rem; margin-bottom: 8px; }
-  .legend i { display: inline-block; width: 18px; height: 6px; vertical-align: middle; margin-right: 8px; }
   svg.chart { width: 100%; height: auto; display: block; overflow: visible; }
-  svg.chart line:not(.cursor) { stroke: var(--hair); }
-  svg.chart text { fill: var(--muted); font-size: 11px; font-family: "IBM Plex Mono", monospace; }
-  .tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--paper); border: 2px solid var(--orange); padding: 8px 10px; font-size: 0.78rem; white-space: nowrap; display: none; z-index: 3; }
-  .empty { border: 3px dashed var(--rule); padding: 36px; text-align: center; background: var(--panel); font-weight: 500; }
+  svg.chart text { fill: var(--muted); font-size: 10px; font-family: inherit; }
+  svg.chart .lbl { fill: var(--ink); font-size: 9.5px; font-weight: 600; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 0.76rem; color: var(--muted); margin-bottom: 6px; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
 
-  /* ---------- The netting visual: the page's loudest moment ---------- */
-  .netting { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 0 24px; position: relative; }
-  .netting::before { content: ""; grid-column: 1 / span 5; grid-row: 1 / span 3; background: var(--blue); margin: -24px 0 40px -24px; z-index: 0; }
-  .netting-head {
-    grid-column: 1 / span 9; grid-row: 1; position: relative; z-index: 1; margin: 0; padding: 0 0 0 0;
-    font-family: "Bricolage Grotesque", Impact, sans-serif; font-weight: 800; font-stretch: 78%;
-    font-size: clamp(1.9rem, 4.2vw, 3.6rem); line-height: 0.98; letter-spacing: -0.02em;
-    color: var(--ink); background: var(--paper); border: 3px solid var(--rule); padding: 22px 24px; box-shadow: var(--shadow);
-  }
-  .netting > .note { grid-column: 6 / -1; grid-row: 2; position: relative; z-index: 1; margin: 18px 0 0; color: var(--muted) !important; font-size: 0.84rem; }
-  .net-rows { grid-column: 4 / -1; grid-row: 3; position: relative; z-index: 1; margin-top: 18px; display: grid; gap: 0; border: 3px solid var(--rule); background: var(--panel); box-shadow: var(--shadow); }
-  .net-row { display: grid; grid-template-columns: minmax(180px, 290px) 1fr minmax(110px, 130px); gap: 16px; align-items: center; font-size: 0.84rem; padding: 12px 16px; border-bottom: 1px solid var(--hair); }
-  .net-track { position: relative; height: 22px; }
-  .net-track::before { content: ""; position: absolute; left: 50%; top: -6px; bottom: -6px; width: 2px; background: var(--ink); }
-  .net-bar { position: absolute; top: 2px; height: 18px; transform-origin: left; }
-  .net-bar.pos { background: var(--orange); }
-  .net-bar.neg { background: var(--blue); }
-  .net-bar.total { background: var(--ink); }
-  .net-amt { text-align: right; font-weight: 600; }
-  .net-row.sum { border-bottom: 0; border-top: 3px solid var(--rule); font-weight: 600; background: var(--orange-tint); }
-  @media (prefers-reduced-motion: no-preference) {
-    .net-bar { animation: grow 900ms cubic-bezier(.2,.7,.2,1) both; }
-    @keyframes grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
-  }
+  .hbars { display: grid; gap: 10px; margin-top: 8px; }
+  .hbar { display: grid; grid-template-columns: 90px 1fr 54px; gap: 10px; align-items: center; font-size: 0.8rem; }
+  .hbar .track { height: 18px; }
+  .hbar .fill { height: 100%; border-radius: 2px; }
+  .hbar .pct { text-align: right; font-weight: 600; }
 
-  .trust-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 28px 24px; margin-top: clamp(56px, 7vw, 88px); }
-  .trust-grid > article:nth-child(1) { grid-column: 1 / -1; }
-  .trust-grid > article:nth-child(2) { grid-column: 3 / -1; }
-  .status-pill { display: inline-block; padding: 1px 8px; font-size: 0.78rem; font-weight: 600; border: 2px solid currentColor; }
-  .s-match { color: var(--blue); }
-  .s-variance { color: var(--ink); background: var(--orange); border-color: var(--rule); }
-  .s-bad { color: #FBFAF6; background: var(--ink); border-color: var(--ink); }
-  .dup { color: var(--bad); font-weight: 600; }
-  .toggle { display: inline-flex; align-items: center; gap: 10px; font-weight: 600; cursor: pointer; border: 3px solid var(--rule); padding: 8px 12px; background: var(--paper); transition: background 160ms ease; }
-  .toggle:hover { background: var(--orange-tint); }
-  .toggle input { width: 18px; height: 18px; accent-color: var(--orange); margin: 0; }
-  .count { font-weight: 600; margin: 0 0 12px; }
-  .matrix td.cell { text-align: center; }
-  .dot { display: inline-block; width: 14px; height: 14px; vertical-align: middle; }
-  .dot.pass { background: var(--blue); }
-  .dot.fail { background: var(--orange); outline: 3px solid var(--ink); }
-  .dot.none { width: 12px; height: 3px; background: var(--hair); }
-  th.fail-col { background: var(--orange) !important; color: #0F0F12 !important; }
+  .net { display: grid; gap: 8px; }
+  .net-row { display: grid; grid-template-columns: minmax(0, 1fr) 120px; gap: 10px; font-size: 0.82rem; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+  .net-row b { text-align: right; }
+  .net-head { font-size: 1.05rem; font-weight: 600; margin: 0 0 10px; }
+  .dot { display: inline-block; width: 11px; height: 11px; border-radius: 50%; }
+  .dot.pass { background: var(--green); } .dot.fail { background: var(--red); } .dot.none { width: 10px; height: 2px; border-radius: 1px; background: var(--line); }
+  td.cell { text-align: center; }
+  .toggle { display: inline-flex; gap: 6px; align-items: center; font-size: 0.82rem; font-weight: 500; cursor: pointer; }
+  .note { color: var(--muted); font-size: 0.78rem; margin: 10px 0 0; }
+  .sr { position: absolute; left: -9999px; }
+  footer { margin-top: 20px; color: var(--muted); font-size: 0.76rem; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+  [hidden] { display: none !important; }
 
-  /* ---------- Footer ---------- */
-  footer { margin-top: clamp(80px, 10vw, 140px); border-top: 3px solid var(--rule); }
-  .foot-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 24px; padding: 32px 0 56px; font-size: 0.84rem; }
-  .foot-grid p { margin: 0; }
-  .foot-grid .sources { grid-column: 1 / span 7; color: var(--muted); }
-  .foot-grid .sig { grid-column: 9 / -1; font-weight: 600; }
-  .foot-grid .sig .big { display: block; font-family: "Bricolage Grotesque", Impact, sans-serif; font-weight: 800; font-stretch: 78%; font-size: 2rem; line-height: 1; margin-bottom: 8px; }
-
-  /* ---------- Scroll reveals (CSS only, where supported) ---------- */
-  @supports (animation-timeline: view()) {
-    @media (prefers-reduced-motion: no-preference) {
-      .reveal { animation: rise linear both; animation-timeline: view(); animation-range: entry 0% cover 22%; }
-      @keyframes rise { from { opacity: 0; transform: translateY(48px); } to { opacity: 1; transform: none; } }
-    }
-  }
-
-  /* ---------- Responsive ---------- */
   @media (max-width: 1000px) {
-    h1 { grid-column: 1 / -1; }
-    .stamp { grid-column: 4 / -1; grid-row: 3; margin: 24px 0 -32px; }
-    .chart-grid { grid-template-columns: minmax(0, 1fr); }
-    .chart-grid > .panel:nth-child(2) { margin-top: 0; }
-    .trust-grid > article:nth-child(2) { grid-column: 1 / -1; }
-    .net-rows { grid-column: 1 / -1; }
-    .netting > .note { grid-column: 1 / -1; }
+    .top, .split, .thirds, .halves { grid-template-columns: minmax(0, 1fr); }
+    .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .kpi:nth-child(3) { border-right: 0; }
+    .kpi:nth-child(n+4) { border-top: 1px solid var(--line); }
   }
-  @media (max-width: 640px) {
-    body { font-size: 14px; }
-    .stamp { grid-column: 1 / -1; transform: none; }
-    .sec-num { font-size: 4.6rem; grid-column: 1 / -1; grid-row: 1; margin-bottom: 6px; }
-    .sec h2, .sub { grid-column: 1 / -1; }
-    .sec h2 { grid-row: 2; }
+  @media (max-width: 560px) {
     .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .kpi:nth-child(1) { grid-column: 1 / -1; grid-row: auto; }
-    .kpi:nth-child(n) { border-right: 3px solid var(--rule); }
-    .kpi:nth-child(odd) { border-right: 0; }
-    .kpi:nth-child(1) { border-right: 0; }
-    .kpi:nth-child(8) { grid-column: 1 / -1; grid-template-columns: 1fr; }
-    .kpi:nth-child(8) .val { grid-row: auto; }
-    .netting::before { display: none; }
-    .netting-head { grid-column: 1 / -1; }
-    .net-row { grid-template-columns: 1fr; gap: 6px; }
-    .net-amt { text-align: left; }
-    .filter-label { width: 100%; border-right: 0; border-bottom: 3px solid var(--rule); }
-    .foot-grid .sources, .foot-grid .sig { grid-column: 1 / -1; }
+    .kpi { border-right: 1px solid var(--line) !important; border-top: 1px solid var(--line); }
+    .kpi:nth-child(2n) { border-right: 0 !important; }
+    .treemap { aspect-ratio: 1 / 1; }
+    .center-toggle .seg button { padding: 6px 18px; }
   }
 </style>
 </head>
 <body>
-<header class="masthead">
-  <div class="wrap">
-    <div class="mast-grid">
-      <p class="kicker"><span>Portfolio project</span>Databricks medallion pipeline</p>
-      <h1><span class="line">Media</span><span class="line">campaign</span><span class="line">pipeline<span class="o">.</span></span></h1>
-      <div class="stamp">
-        <p class="lede">Three advertising sources extracted, cleaned through bronze, silver and gold, checked for quality, and reconciled against finance invoices.</p>
-        <p class="refresh" id="refresh" role="status"><span class="live" aria-hidden="true"></span><span id="refresh-text">Loading the latest pipeline run…</span></p>
-        <a class="repo" href="https://github.com/BalamuruganS-Data/media-campaign-pipeline">View the code on GitHub</a>
-      </div>
-    </div>
-  </div>
-  <div class="wrap">
-    <nav class="filter-bar" role="group" aria-label="Platform filter">
-      <span class="filter-label" id="filter-label">Platform</span>
-      <div class="seg" id="platform-seg" aria-labelledby="filter-label"></div>
+<header class="bar">
+  <div class="bar-inner">
+    <div class="brand">Media Campaign Insights<small>Databricks pipeline: bronze, silver and gold layers</small></div>
+    <nav class="tabs" aria-label="Dashboard pages">
+      <a href="#trends" data-view="trends">Market Trends</a>
+      <a href="#clients" data-view="clients">Client Overview</a>
+      <a href="#media" data-view="media">Media Breakdown</a>
+      <a href="#trust" data-view="trust">Platforms &amp; Trust</a>
     </nav>
-  </div>
-  <div class="ticker" aria-hidden="true">
-    <div class="ticker-track">
-      <span>Kaggle API extraction</span><span>Bronze: raw, untouched</span><span>Silver: typed and flagged</span><span>Gold: star schema</span><span>Ratios from totals, never averaged</span><span>Six automated quality checks</span><span>Line-level billing reconciliation</span><span>Refreshed by the pipeline</span>
-      <span>Kaggle API extraction</span><span>Bronze: raw, untouched</span><span>Silver: typed and flagged</span><span>Gold: star schema</span><span>Ratios from totals, never averaged</span><span>Six automated quality checks</span><span>Line-level billing reconciliation</span><span>Refreshed by the pipeline</span>
-    </div>
   </div>
 </header>
 
 <main class="wrap">
-  <section class="sec" aria-labelledby="perf-h">
-    <div class="sec-head">
-      <span class="sec-num" aria-hidden="true">01</span>
-      <h2 id="perf-h">How campaigns <span class="hl">performed</span></h2>
-      <p class="sub">Every rate is calculated from totals, never by averaging row-level percentages, so small campaigns can’t distort the result.</p>
-    </div>
-    <div class="kpis reveal" id="kpis"></div>
-    <p class="caveat" id="kpi-caveat"></p>
-    <div class="table-scroll platform-table reveal">
-      <table aria-label="KPIs by platform">
-        <thead><tr><th>Platform</th><th>Spend</th><th>Impressions</th><th>Clicks</th><th>CTR</th><th>CPC</th><th>CPM</th><th>CPA</th></tr></thead>
-        <tbody id="platform-body"></tbody>
-      </table>
-    </div>
-  </section>
-
-  <section class="sec" aria-labelledby="time-h">
-    <div class="sec-head">
-      <span class="sec-num" aria-hidden="true">02</span>
-      <h2 id="time-h">Over <span class="hl">time</span></h2>
-      <p class="sub">The three sources don’t share a time period, so each trend is shown for its own platform.</p>
-    </div>
-    <div id="trends" class="reveal"></div>
-  </section>
-
-  <section class="sec" aria-labelledby="trust-h">
-    <div class="sec-head">
-      <span class="sec-num" aria-hidden="true">03</span>
-      <h2 id="trust-h">Can the numbers be <span class="hl">trusted?</span></h2>
-      <p class="sub">Platform-reported spend is matched line by line against invoices. The billing feed is simulated with planted discrepancies, and the reconciliation is expected to catch every one of them.</p>
-    </div>
-
-    <article class="netting reveal" id="netting" aria-label="What the billing total hides"></article>
-
-    <div class="trust-grid">
-      <article class="panel reveal">
-        <div class="panel-head">
-          <div>
-            <h3>Billing reconciliation</h3>
-            <p class="note">Delivered spend against billed amount per platform and month, with a $1 tolerance for rounding.</p>
-          </div>
-          <label class="toggle"><input type="checkbox" id="attention-only"> Show only lines needing attention</label>
-        </div>
-        <p class="count" id="recon-count"></p>
-        <div class="table-scroll">
-          <table aria-label="Billing reconciliation">
-            <thead><tr><th>Platform</th><th class="left">Month</th><th>Delivered</th><th>Billed</th><th>Variance</th><th class="left">Invoice</th><th class="left">Status</th></tr></thead>
-            <tbody id="recon-body"></tbody>
-          </table>
-        </div>
-      </article>
-
-      <article class="panel reveal">
-        <h3>Automated data quality checks</h3>
-        <p class="note" id="dq-summary"></p>
-        <div class="table-scroll">
-          <table class="matrix" aria-label="Data quality check history">
-            <thead id="dq-head"></thead>
-            <tbody id="dq-body"></tbody>
-          </table>
-        </div>
-        <p class="note" style="margin:14px 0 0" id="dq-foot"></p>
-      </article>
-    </div>
-  </section>
-</main>
-
-<footer>
-  <div class="wrap foot-grid">
-    <p class="sources">Sources: two public Kaggle datasets (social ads and daily A/B campaigns, August 2019) and one fictional Kaggle dataset used for volume (multichannel, 2021). The finance billing feed is simulated. Platforms come from unrelated datasets with different definitions, so compare trends within a platform rather than values across platforms. This page reads the pipeline’s latest export; the full analysis lives in the Power BI report in the repository.</p>
-    <p class="sig"><span class="big">Balamurugan S</span>Data engineer, Chennai<br><a href="https://github.com/BalamuruganS-Data/media-campaign-pipeline">Repository</a> / <a href="https://linkedin.com/in/-bala-murugan">LinkedIn</a></p>
+  <!-- Shared KPI strip and data info for the multichannel views -->
+  <div class="row top" id="kpi-row">
+    <section class="card kpis" id="kpis" aria-label="Headline figures"></section>
+    <aside class="card info" id="info" role="status">
+      <div><span class="live"></span><strong id="refresh-text">Loading the latest pipeline run…</strong></div>
+      <div>Market, client and channel views: multichannel source, 2021 (the only source with these attributes)</div>
+      <div>Currency: USD</div>
+      <a href="https://github.com/BalamuruganS-Data/media-campaign-pipeline">View the code on GitHub</a>
+    </aside>
   </div>
-</footer>
+
+  <div class="filters" id="filters">
+    <div class="chips" id="market-chips" role="group" aria-label="Markets"></div>
+    <div class="chips" id="period-chips" role="group" aria-label="Period"></div>
+  </div>
+
+  <!-- Market Trends -->
+  <div data-panel="trends">
+    <section class="card" style="margin-top:16px">
+      <h2>Share of spend by market</h2>
+      <p class="hint">Click a market to filter every view. Click again to clear.</p>
+      <div class="treemap" id="treemap"></div>
+    </section>
+    <div class="row split">
+      <section class="card">
+        <h2>Total spend by month</h2>
+        <div class="legend"><span><i style="background:var(--grey-bar)"></i>Outside selected period</span><span><i style="background:var(--blue-2)"></i>Selected period</span><span><i style="background:var(--ink);border-radius:50%"></i>Change vs previous month</span></div>
+        <div id="month-chart"></div>
+      </section>
+      <section class="card">
+        <h2>Spend summary by market</h2>
+        <div class="tbl"><table id="market-table"></table></div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Client Overview -->
+  <div data-panel="clients" hidden>
+    <div class="center-toggle"><div class="seg" role="group" aria-label="Show values as"><button type="button" data-unit="usd">Spend in $</button><button type="button" data-unit="pct">Spend in %</button></div></div>
+    <div class="row split">
+      <section class="card">
+        <h2>Spend by client and media channel</h2>
+        <p class="hint" id="client-hint"></p>
+        <div class="tbl"><table id="client-channel"></table></div>
+      </section>
+      <section class="card">
+        <h2>Client summary</h2>
+        <div class="tbl"><table id="client-table"></table></div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Media Breakdown -->
+  <div data-panel="media" hidden>
+    <div class="center-toggle"><div class="seg" role="group" aria-label="Show values as"><button type="button" data-unit="usd">Spend in $</button><button type="button" data-unit="pct">Spend in %</button></div></div>
+    <div class="row halves">
+      <section class="card">
+        <h2>Spend by market and media channel</h2>
+        <p class="hint" id="mc-hint"></p>
+        <div class="tbl"><table id="market-channel"></table></div>
+      </section>
+      <section class="card">
+        <h2 id="change-title">Change by media channel</h2>
+        <p class="hint" id="change-hint"></p>
+        <div class="tbl"><table id="change-table"></table></div>
+      </section>
+    </div>
+    <div class="row halves">
+      <section class="card">
+        <h2>Spend % by media channel</h2>
+        <div class="hbars" id="channel-bars"></div>
+      </section>
+      <section class="card">
+        <h2>Media channel summary</h2>
+        <div class="tbl"><table id="channel-table"></table></div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Platforms & Trust -->
+  <div data-panel="trust" hidden>
+    <div class="row">
+      <section class="card">
+        <h2>All platforms</h2>
+        <p class="hint">Rates are calculated from totals. Cost ratios exclude days with spend but no recorded performance; CPA uses only platforms that report conversions. The three sources are unrelated datasets, so compare within a platform.</p>
+        <div class="tbl"><table id="platform-table"></table></div>
+      </section>
+    </div>
+    <div class="row halves">
+      <section class="card">
+        <div class="card-head"><h2>Daily Campaign, day by day</h2><div class="seg" id="daily-metric" role="group" aria-label="Metric"><button type="button" data-m="spend">Spend</button><button type="button" data-m="ctr">CTR</button></div></div>
+        <div class="legend" id="daily-legend"></div>
+        <div id="daily-chart"></div>
+        <p class="note" id="daily-note"></p>
+      </section>
+      <section class="card">
+        <h2>What the billing total hides</h2>
+        <div id="netting"></div>
+      </section>
+    </div>
+    <div class="row halves">
+      <section class="card">
+        <div class="card-head"><h2>Billing reconciliation</h2><label class="toggle"><input type="checkbox" id="attention-only"> Only lines needing attention</label></div>
+        <p class="hint" id="recon-count"></p>
+        <div class="tbl"><table id="recon-table"></table></div>
+      </section>
+      <section class="card">
+        <h2>Automated data quality checks</h2>
+        <p class="hint" id="dq-summary"></p>
+        <div class="tbl"><table id="dq-table"></table></div>
+        <p class="note">Each column is a run, newest on the left, showing the last six runs. Hover over a dot for details. One failure was triggered deliberately, by deleting a row, to prove the checks can fail.</p>
+      </section>
+    </div>
+  </div>
+
+  <footer>
+    <span>Sources: public Kaggle datasets (social and daily, 2019) and a fictional Kaggle dataset (multichannel, 2021). The billing feed is simulated.</span>
+    <span>Built by Balamurugan S. Source: media campaign pipeline.</span>
+  </footer>
+</main>
 
 <script>
 (function () {
   "use strict";
-
-  // ---------- Saved snapshot: used only when the live export can't be loaded ----------
-  const SNAPSHOT = (function () {
-    const C = [[2280,82702,7016,618],[1757,121040,8110,511],[2343,131711,6508,372],[1940,72878,3065,340],[1835,null,null,null],
-      [3083,109076,4028,764],[2544,142123,2640,499],[1900,90939,7260,462],[2813,121332,6198,501],[2149,117624,2277,734],
-      [2490,115247,8137,475],[2319,116639,2993,794],[2697,82847,6554,766],[1875,145248,4521,788],[2774,132845,4896,366],
-      [2024,71274,5224,438],[2177,119612,6628,222],[1876,108452,7253,243],[2596,107890,3706,542],[2675,113430,2578,299],
-      [1803,74654,5691,800],[2939,105705,6843,387],[2496,129880,4410,766],[1892,72515,4085,585],[1962,117006,4234,386],
-      [2233,124897,5435,251],[2061,104678,4941,605],[2421,141654,6287,643],[2375,92029,8127,334],[2324,111306,4658,670]];
-    const T = [[3008,39550,3038,255],[2542,100719,4657,677],[2365,70263,7885,578],[2710,78451,4216,340],[2297,114295,5863,768],
-      [2458,42684,7488,488],[2838,53986,4221,890],[2916,33669,7184,431],[2652,45511,8259,845],[2790,95054,8125,275],
-      [2420,83633,3750,668],[2831,124591,8264,709],[1972,65827,7568,812],[2537,56304,3993,340],[2516,94338,4993,398],
-      [3076,106584,6800,487],[1968,95843,7910,238],[1979,53632,6909,257],[2626,22521,7617,512],[2712,39470,6050,730],
-      [3112,133771,5471,245],[2899,34752,4431,276],[2407,60286,5077,473],[2078,36650,7156,269],[2928,120576,3596,651],
-      [2311,80841,3820,284],[2915,111469,6435,771],[2247,54627,8144,721],[2805,67444,7651,677],[1977,120203,4399,572]];
-    const daily = [];
-    [["Control Campaign", C], ["Test Campaign", T]].forEach(([name, rows]) => rows.forEach((r, i) => daily.push({
-      campaign: name, date: "2019-08-" + String(i + 1).padStart(2, "0"),
-      spend: r[0], impressions: r[1], clicks: r[2], conversions: r[3] })));
-    const months = [212138826,191464820,211892603,205452322,211663415,205516710,212239503,213545454,206273900,212709908,205504738,212476409];
-    const mm = months.map((v, i) => ({ month: "2021-" + String(i + 1).padStart(2, "0"), spend: v }));
-    const recon = [
-      { platform: "daily_campaign_platform", billing_month: "2019-08", delivered_spend: 145545, billed_amount: 143710, has_duplicate_invoice: false, status: "VARIANCE" },
-      { platform: "social_platform", billing_month: "UNDATED", delivered_spend: 58705.23, billed_amount: 58705.23, has_duplicate_invoice: false, status: "MATCH" }
-    ];
-    mm.forEach((m, i) => recon.push({ platform: "multichannel_platform", billing_month: m.month, delivered_spend: m.spend,
-      billed_amount: i === 2 ? 217189918.08 : (i === 11 ? null : m.spend), has_duplicate_invoice: i === 6,
-      status: i === 2 ? "VARIANCE" : (i === 11 ? "DELIVERED_NOT_BILLED" : "MATCH") }));
-    recon.push({ platform: "multichannel_platform", billing_month: "2022-01", delivered_spend: null, billed_amount: 15000, has_duplicate_invoice: false, status: "BILLED_NOT_DELIVERED" });
-    const exp = { daily_rows_bronze_vs_silver: 60, social_rows_bronze_vs_silver: 1143, multichannel_rows_bronze_vs_silver: 200000,
-                  null_dates_non_social: 0, spend_silver_vs_fact: 2501082858.23, orphan_campaigns: 0 };
-    const runs = { "13:34:47": ["daily_rows_bronze_vs_silver", "spend_silver_vs_fact"],
-                   "13:40:48": ["multichannel_rows_bronze_vs_silver", "social_rows_bronze_vs_silver"],
-                   "13:48:30": ["daily_rows_bronze_vs_silver", "multichannel_rows_bronze_vs_silver", "orphan_campaigns", "social_rows_bronze_vs_silver", "spend_silver_vs_fact"],
-                   "13:50:45": Object.keys(exp), "13:53:01": Object.keys(exp), "13:55:16": Object.keys(exp) };
-    const dq = [];
-    Object.entries(runs).forEach(([t, checks]) => checks.forEach(c => {
-      const fail = t === "13:53:01" && c === "daily_rows_bronze_vs_silver";
-      dq.push({ run_at: "2026-11-11T" + t + "Z", check_name: c, expected: exp[c], actual: fail ? 59 : exp[c], status: fail ? "FAIL" : "PASS" });
-    }));
-    return {
-      generated_at: "2026-11-11T13:55:16Z",
-      platforms: [
-        { platform: "daily_campaign_platform", name: "Daily Campaign", spend: 145545, spend_complete: 143710, impressions: 5414777, clicks: 335273, conversions: 30798 },
-        { platform: "social_platform", name: "Social", spend: 58705.23, spend_complete: 58705.23, impressions: 213434828, clicks: 38165, conversions: 3264 },
-        { platform: "multichannel_platform", name: "Multichannel", spend: 2500878608, spend_complete: 2500878608, impressions: 1101460304, clicks: 109954406, conversions: null }
-      ],
-      daily, multichannel_monthly: mm, reconciliation: recon, dq_results: dq
-    };
-  })();
+  const SNAPSHOT = {"generated_at":"2026-11-15T05:53:30Z","platforms":[{"platform":"multichannel_platform","name":"Multichannel","spend":2500878608.0,"spend_complete":2500878608.0,"impressions":1101460304,"clicks":109954406,"conversions":null},{"platform":"daily_campaign_platform","name":"Daily Campaign","spend":145545.0,"spend_complete":143710.0,"impressions":5414777,"clicks":335273,"conversions":30798},{"platform":"social_platform","name":"Social","spend":58705.23,"spend_complete":58705.23,"impressions":213434828,"clicks":38165,"conversions":3264}],"daily":[{"campaign":"Control Campaign","date":"2019-08-01","spend":2280.0,"impressions":82702,"clicks":7016,"conversions":618},{"campaign":"Control Campaign","date":"2019-08-02","spend":1757.0,"impressions":121040,"clicks":8110,"conversions":511},{"campaign":"Control Campaign","date":"2019-08-03","spend":2343.0,"impressions":131711,"clicks":6508,"conversions":372},{"campaign":"Control Campaign","date":"2019-08-04","spend":1940.0,"impressions":72878,"clicks":3065,"conversions":340},{"campaign":"Control Campaign","date":"2019-08-05","spend":1835.0,"impressions":null,"clicks":null,"conversions":null},{"campaign":"Control Campaign","date":"2019-08-06","spend":3083.0,"impressions":109076,"clicks":4028,"conversions":764},{"campaign":"Control Campaign","date":"2019-08-07","spend":2544.0,"impressions":142123,"clicks":2640,"conversions":499},{"campaign":"Control Campaign","date":"2019-08-08","spend":1900.0,"impressions":90939,"clicks":7260,"conversions":462},{"campaign":"Control Campaign","date":"2019-08-09","spend":2813.0,"impressions":121332,"clicks":6198,"conversions":501},{"campaign":"Control Campaign","date":"2019-08-10","spend":2149.0,"impressions":117624,"clicks":2277,"conversions":734},{"campaign":"Control Campaign","date":"2019-08-11","spend":2490.0,"impressions":115247,"clicks":8137,"conversions":475},{"campaign":"Control Campaign","date":"2019-08-12","spend":2319.0,"impressions":116639,"clicks":2993,"conversions":794},{"campaign":"Control Campaign","date":"2019-08-13","spend":2697.0,"impressions":82847,"clicks":6554,"conversions":766},{"campaign":"Control Campaign","date":"2019-08-14","spend":1875.0,"impressions":145248,"clicks":4521,"conversions":788},{"campaign":"Control Campaign","date":"2019-08-15","spend":2774.0,"impressions":132845,"clicks":4896,"conversions":366},{"campaign":"Control Campaign","date":"2019-08-16","spend":2024.0,"impressions":71274,"clicks":5224,"conversions":438},{"campaign":"Control Campaign","date":"2019-08-17","spend":2177.0,"impressions":119612,"clicks":6628,"conversions":222},{"campaign":"Control Campaign","date":"2019-08-18","spend":1876.0,"impressions":108452,"clicks":7253,"conversions":243},{"campaign":"Control Campaign","date":"2019-08-19","spend":2596.0,"impressions":107890,"clicks":3706,"conversions":542},{"campaign":"Control Campaign","date":"2019-08-20","spend":2675.0,"impressions":113430,"clicks":2578,"conversions":299},{"campaign":"Control Campaign","date":"2019-08-21","spend":1803.0,"impressions":74654,"clicks":5691,"conversions":800},{"campaign":"Control Campaign","date":"2019-08-22","spend":2939.0,"impressions":105705,"clicks":6843,"conversions":387},{"campaign":"Control Campaign","date":"2019-08-23","spend":2496.0,"impressions":129880,"clicks":4410,"conversions":766},{"campaign":"Control Campaign","date":"2019-08-24","spend":1892.0,"impressions":72515,"clicks":4085,"conversions":585},{"campaign":"Control Campaign","date":"2019-08-25","spend":1962.0,"impressions":117006,"clicks":4234,"conversions":386},{"campaign":"Control Campaign","date":"2019-08-26","spend":2233.0,"impressions":124897,"clicks":5435,"conversions":251},{"campaign":"Control Campaign","date":"2019-08-27","spend":2061.0,"impressions":104678,"clicks":4941,"conversions":605},{"campaign":"Control Campaign","date":"2019-08-28","spend":2421.0,"impressions":141654,"clicks":6287,"conversions":643},{"campaign":"Control Campaign","date":"2019-08-29","spend":2375.0,"impressions":92029,"clicks":8127,"conversions":334},{"campaign":"Control Campaign","date":"2019-08-30","spend":2324.0,"impressions":111306,"clicks":4658,"conversions":670},{"campaign":"Test Campaign","date":"2019-08-01","spend":3008.0,"impressions":39550,"clicks":3038,"conversions":255},{"campaign":"Test Campaign","date":"2019-08-02","spend":2542.0,"impressions":100719,"clicks":4657,"conversions":677},{"campaign":"Test Campaign","date":"2019-08-03","spend":2365.0,"impressions":70263,"clicks":7885,"conversions":578},{"campaign":"Test Campaign","date":"2019-08-04","spend":2710.0,"impressions":78451,"clicks":4216,"conversions":340},{"campaign":"Test Campaign","date":"2019-08-05","spend":2297.0,"impressions":114295,"clicks":5863,"conversions":768},{"campaign":"Test Campaign","date":"2019-08-06","spend":2458.0,"impressions":42684,"clicks":7488,"conversions":488},{"campaign":"Test Campaign","date":"2019-08-07","spend":2838.0,"impressions":53986,"clicks":4221,"conversions":890},{"campaign":"Test Campaign","date":"2019-08-08","spend":2916.0,"impressions":33669,"clicks":7184,"conversions":431},{"campaign":"Test Campaign","date":"2019-08-09","spend":2652.0,"impressions":45511,"clicks":8259,"conversions":845},{"campaign":"Test Campaign","date":"2019-08-10","spend":2790.0,"impressions":95054,"clicks":8125,"conversions":275},{"campaign":"Test Campaign","date":"2019-08-11","spend":2420.0,"impressions":83633,"clicks":3750,"conversions":668},{"campaign":"Test Campaign","date":"2019-08-12","spend":2831.0,"impressions":124591,"clicks":8264,"conversions":709},{"campaign":"Test Campaign","date":"2019-08-13","spend":1972.0,"impressions":65827,"clicks":7568,"conversions":812},{"campaign":"Test Campaign","date":"2019-08-14","spend":2537.0,"impressions":56304,"clicks":3993,"conversions":340},{"campaign":"Test Campaign","date":"2019-08-15","spend":2516.0,"impressions":94338,"clicks":4993,"conversions":398},{"campaign":"Test Campaign","date":"2019-08-16","spend":3076.0,"impressions":106584,"clicks":6800,"conversions":487},{"campaign":"Test Campaign","date":"2019-08-17","spend":1968.0,"impressions":95843,"clicks":7910,"conversions":238},{"campaign":"Test Campaign","date":"2019-08-18","spend":1979.0,"impressions":53632,"clicks":6909,"conversions":257},{"campaign":"Test Campaign","date":"2019-08-19","spend":2626.0,"impressions":22521,"clicks":7617,"conversions":512},{"campaign":"Test Campaign","date":"2019-08-20","spend":2712.0,"impressions":39470,"clicks":6050,"conversions":730},{"campaign":"Test Campaign","date":"2019-08-21","spend":3112.0,"impressions":133771,"clicks":5471,"conversions":245},{"campaign":"Test Campaign","date":"2019-08-22","spend":2899.0,"impressions":34752,"clicks":4431,"conversions":276},{"campaign":"Test Campaign","date":"2019-08-23","spend":2407.0,"impressions":60286,"clicks":5077,"conversions":473},{"campaign":"Test Campaign","date":"2019-08-24","spend":2078.0,"impressions":36650,"clicks":7156,"conversions":269},{"campaign":"Test Campaign","date":"2019-08-25","spend":2928.0,"impressions":120576,"clicks":3596,"conversions":651},{"campaign":"Test Campaign","date":"2019-08-26","spend":2311.0,"impressions":80841,"clicks":3820,"conversions":284},{"campaign":"Test Campaign","date":"2019-08-27","spend":2915.0,"impressions":111469,"clicks":6435,"conversions":771},{"campaign":"Test Campaign","date":"2019-08-28","spend":2247.0,"impressions":54627,"clicks":8144,"conversions":721},{"campaign":"Test Campaign","date":"2019-08-29","spend":2805.0,"impressions":67444,"clicks":7651,"conversions":677},{"campaign":"Test Campaign","date":"2019-08-30","spend":1977.0,"impressions":120203,"clicks":4399,"conversions":572}],"multichannel_monthly":[{"month":"2021-01","spend":212138826.0},{"month":"2021-02","spend":191464820.0},{"month":"2021-03","spend":211892603.0},{"month":"2021-04","spend":205452322.0},{"month":"2021-05","spend":211663415.0},{"month":"2021-06","spend":205516710.0},{"month":"2021-07","spend":212239503.0},{"month":"2021-08","spend":213545454.0},{"month":"2021-09","spend":206273900.0},{"month":"2021-10","spend":212709908.0},{"month":"2021-11","spend":205504738.0},{"month":"2021-12","spend":212476409.0}],"reconciliation":[{"platform":"daily_campaign_platform","billing_month":"2019-08","delivered_spend":145545.0,"billed_amount":143710.0,"variance":-1835.0,"has_duplicate_invoice":false,"status":"VARIANCE"},{"platform":"multichannel_platform","billing_month":"2021-01","delivered_spend":212138826.0,"billed_amount":212138826.0,"variance":0.0,"has_duplicate_invoice":false,"status":"MATCH"},{"platform":"multichannel_platform","billing_month":"2021-02","delivered_spend":191464820.0,"billed_amount":191464820.0,"variance":0.0,"has_duplicate_invoice":false,"status":"MATCH"},{"platform":"multichannel_platform","billing_month":"2021-03","delivered_spend":211892603.0,"billed_amount":217189918.08,"variance":5297315.08,"has_duplicate_invoice":false,"status":"VARIANCE"},{"platform":"multichannel_platform","billing_month":"2021-04","delivered_spend":205452322.0,"billed_amount":205452322.0,"variance":0.0,"has_duplicate_invoice":false,"status":"MATCH"},{"platform":"multichannel_platform","billing_month":"2021-05","delivered_spend":211663415.0,"billed_amount":211663415.0,"variance":0.0,"has_duplicate_invoice":false,"status":"MATCH"},{"platform":"multichannel_platform","billing_month":"2021-06","delivered_spend":205516710.0,"billed_amount":205516710.0,"variance":0.0,"has_duplicate_invoice":false,"status":"MATCH"},{"platform":"multichannel_platform","billing_month":"2021-07","delivered_spend":212239503.0,"billed_amount":212239503.0,"variance":0.0,"has_duplicate_invoice":true,"status":"MATCH"},{"platform":"multichannel_platform","billing_month":"2021-08","delivered_spend":213545454.0,"billed_amount":213545454.0,"variance":0.0,"has_duplicate_invoice":false,"status":"MATCH"},{"platform":"multichannel_platform","billing_month":"2021-09","delivered_spend":206273900.0,"billed_amount":206273900.0,"variance":0.0,"has_duplicate_invoice":false,"status":"MATCH"},{"platform":"multichannel_platform","billing_month":"2021-10","delivered_spend":212709908.0,"billed_amount":212709908.0,"variance":0.0,"has_duplicate_invoice":false,"status":"MATCH"},{"platform":"multichannel_platform","billing_month":"2021-11","delivered_spend":205504738.0,"billed_amount":205504738.0,"variance":0.0,"has_duplicate_invoice":false,"status":"MATCH"},{"platform":"multichannel_platform","billing_month":"2021-12","delivered_spend":212476409.0,"billed_amount":null,"variance":null,"has_duplicate_invoice":false,"status":"DELIVERED_NOT_BILLED"},{"platform":"multichannel_platform","billing_month":"2022-01","delivered_spend":null,"billed_amount":15000.0,"variance":null,"has_duplicate_invoice":false,"status":"BILLED_NOT_DELIVERED"},{"platform":"social_platform","billing_month":"UNDATED","delivered_spend":58705.23,"billed_amount":58705.23,"variance":0.0,"has_duplicate_invoice":false,"status":"MATCH"}],"dq_results":[{"run_at":"2026-11-11T13:34:47Z","check_name":"daily_rows_bronze_vs_silver","expected":60.0,"actual":60.0,"status":"PASS"},{"run_at":"2026-11-11T13:34:47Z","check_name":"spend_silver_vs_fact","expected":2501082858.23,"actual":2501082858.23,"status":"PASS"},{"run_at":"2026-11-11T13:40:48Z","check_name":"multichannel_rows_bronze_vs_silver","expected":200000.0,"actual":200000.0,"status":"PASS"},{"run_at":"2026-11-11T13:40:48Z","check_name":"social_rows_bronze_vs_silver","expected":1143.0,"actual":1143.0,"status":"PASS"},{"run_at":"2026-11-11T13:47:17Z","check_name":"orphan_campaigns","expected":0.0,"actual":0.0,"status":"PASS"},{"run_at":"2026-11-11T13:48:30Z","check_name":"daily_rows_bronze_vs_silver","expected":60.0,"actual":60.0,"status":"PASS"},{"run_at":"2026-11-11T13:48:30Z","check_name":"multichannel_rows_bronze_vs_silver","expected":200000.0,"actual":200000.0,"status":"PASS"},{"run_at":"2026-11-11T13:48:30Z","check_name":"orphan_campaigns","expected":0.0,"actual":0.0,"status":"PASS"},{"run_at":"2026-11-11T13:48:30Z","check_name":"social_rows_bronze_vs_silver","expected":1143.0,"actual":1143.0,"status":"PASS"},{"run_at":"2026-11-11T13:48:30Z","check_name":"spend_silver_vs_fact","expected":2501082858.23,"actual":2501082858.23,"status":"PASS"},{"run_at":"2026-11-11T13:50:45Z","check_name":"daily_rows_bronze_vs_silver","expected":60.0,"actual":60.0,"status":"PASS"},{"run_at":"2026-11-11T13:50:45Z","check_name":"multichannel_rows_bronze_vs_silver","expected":200000.0,"actual":200000.0,"status":"PASS"},{"run_at":"2026-11-11T13:50:45Z","check_name":"null_dates_non_social","expected":0.0,"actual":0.0,"status":"PASS"},{"run_at":"2026-11-11T13:50:45Z","check_name":"orphan_campaigns","expected":0.0,"actual":0.0,"status":"PASS"},{"run_at":"2026-11-11T13:50:45Z","check_name":"social_rows_bronze_vs_silver","expected":1143.0,"actual":1143.0,"status":"PASS"},{"run_at":"2026-11-11T13:50:45Z","check_name":"spend_silver_vs_fact","expected":2501082858.23,"actual":2501082858.23,"status":"PASS"},{"run_at":"2026-11-11T13:53:01Z","check_name":"daily_rows_bronze_vs_silver","expected":60.0,"actual":59.0,"status":"FAIL"},{"run_at":"2026-11-11T13:53:01Z","check_name":"multichannel_rows_bronze_vs_silver","expected":200000.0,"actual":200000.0,"status":"PASS"},{"run_at":"2026-11-11T13:53:01Z","check_name":"null_dates_non_social","expected":0.0,"actual":0.0,"status":"PASS"},{"run_at":"2026-11-11T13:53:01Z","check_name":"orphan_campaigns","expected":0.0,"actual":0.0,"status":"PASS"},{"run_at":"2026-11-11T13:53:01Z","check_name":"social_rows_bronze_vs_silver","expected":1143.0,"actual":1143.0,"status":"PASS"},{"run_at":"2026-11-11T13:53:01Z","check_name":"spend_silver_vs_fact","expected":2501082858.23,"actual":2501082858.23,"status":"PASS"},{"run_at":"2026-11-11T13:55:16Z","check_name":"daily_rows_bronze_vs_silver","expected":60.0,"actual":60.0,"status":"PASS"},{"run_at":"2026-11-11T13:55:16Z","check_name":"multichannel_rows_bronze_vs_silver","expected":200000.0,"actual":200000.0,"status":"PASS"},{"run_at":"2026-11-11T13:55:16Z","check_name":"null_dates_non_social","expected":0.0,"actual":0.0,"status":"PASS"},{"run_at":"2026-11-11T13:55:16Z","check_name":"orphan_campaigns","expected":0.0,"actual":0.0,"status":"PASS"},{"run_at":"2026-11-11T13:55:16Z","check_name":"social_rows_bronze_vs_silver","expected":1143.0,"actual":1143.0,"status":"PASS"},{"run_at":"2026-11-11T13:55:16Z","check_name":"spend_silver_vs_fact","expected":2501082858.23,"actual":2501082858.23,"status":"PASS"},{"run_at":"2026-11-15T05:49:59Z","check_name":"daily_rows_bronze_vs_silver","expected":60.0,"actual":60.0,"status":"PASS"},{"run_at":"2026-11-15T05:49:59Z","check_name":"multichannel_rows_bronze_vs_silver","expected":200000.0,"actual":200000.0,"status":"PASS"},{"run_at":"2026-11-15T05:49:59Z","check_name":"null_dates_non_social","expected":0.0,"actual":0.0,"status":"PASS"},{"run_at":"2026-11-15T05:49:59Z","check_name":"orphan_campaigns","expected":0.0,"actual":0.0,"status":"PASS"},{"run_at":"2026-11-15T05:49:59Z","check_name":"social_rows_bronze_vs_silver","expected":1143.0,"actual":1143.0,"status":"PASS"},{"run_at":"2026-11-15T05:49:59Z","check_name":"spend_silver_vs_fact","expected":2501082858.23,"actual":2501082858.23,"status":"PASS"}],"breakdowns_compact":{"markets":["Chicago","Houston","Los Angeles","Miami","New York"],"clients":["Alpha Innovations","DataTech Solutions","Innovate Industries","NexGen Systems","TechCorp"],"channels":["Email","Facebook","Google Ads","Instagram","Website","YouTube"],"rows":[["2021-01",0,0,0,1445851.0,633525,65893,118],["2021-01",0,0,1,1572290.0,674568,72044,125],["2021-01",0,0,2,1362350.0,612509,58501,107],["2021-01",0,0,3,1746989.0,717641,73215,136],["2021-01",0,0,4,1336920.0,588837,60256,107],["2021-01",0,0,5,1414552.0,633040,61750,112],["2021-01",0,1,0,1627095.0,727619,67538,127],["2021-01",0,1,1,1442827.0,656223,67125,118],["2021-01",0,1,2,1222846.0,579575,45832,94],["2021-01",0,1,3,1483388.0,582175,67511,115],["2021-01",0,1,4,1198287.0,605162,51603,102],["2021-01",0,1,5,1589537.0,704747,72065,125],["2021-01",0,2,0,1645715.0,683943,70321,124],["2021-01",0,2,1,1438160.0,651783,61304,120],["2021-01",0,2,2,1085000.0,491355,51262,87],["2021-01",0,2,3,1330253.0,595454,59013,111],["2021-01",0,2,4,1159342.0,554531,54837,99],["2021-01",0,2,5,1325390.0,549500,58906,104],["2021-01",0,3,0,1285779.0,509237,54813,102],["2021-01",0,3,1,1448574.0,618634,61510,118],["2021-01",0,3,2,1189902.0,509999,55756,98],["2021-01",0,3,3,1387934.0,671885,60033,116],["2021-01",0,3,4,1072094.0,474316,46875,87],["2021-01",0,3,5,1524432.0,631059,64883,117],["2021-01",0,4,0,1316039.0,555019,60913,105],["2021-01",0,4,1,1553340.0,660633,65938,119],["2021-01",0,4,2,1459117.0,650038,63263,115],["2021-01",0,4,3,1489927.0,666544,57983,116],["2021-01",0,4,4,1252488.0,619940,55136,104],["2021-01",0,4,5,1144952.0,507343,55038,96],["2021-01",1,0,0,1441252.0,658605,64869,115],["2021-01",1,0,1,1421087.0,665165,65799,121],["2021-01",1,0,2,1552070.0,645350,64195,118],["2021-01",1,0,3,1256123.0,565582,57059,103],["2021-01",1,0,4,1552624.0,705148,70752,126],["2021-01",1,0,5,1647064.0,731626,74299,134],["2021-01",1,1,0,1371704.0,615419,61652,110],["2021-01",1,1,1,1433590.0,600187,67700,115],["2021-01",1,1,2,1290997.0,564808,58419,104],["2021-01",1,1,3,1567426.0,736027,73621,130],["2021-01",1,1,4,1448399.0,640949,62777,115],["2021-01",1,1,5,1099367.0,517487,50787,89],["2021-01",1,2,0,1271196.0,510198,58465,103],["2021-01",1,2,1,1180623.0,549329,51023,93],["2021-01",1,2,2,1282482.0,561129,63588,106],["2021-01",1,2,3,1448361.0,600532,57611,110],["2021-01",1,2,4,1503753.0,646538,69075,125],["2021-01",1,2,5,1591920.0,728209,70801,133],["2021-01",1,3,0,1579592.0,621286,65700,123],["2021-01",1,3,1,1331331.0,591144,59440,107],["2021-01",1,3,2,1373684.0,639118,60147,115],["2021-01",1,3,3,1391110.0,697431,62381,118],["2021-01",1,3,4,1484866.0,631177,66507,121],["2021-01",1,3,5,1578101.0,656138,68174,125],["2021-01",1,4,0,1390299.0,583383,63024,113],["2021-01",1,4,1,1505437.0,598581,68013,120],["2021-01",1,4,2,1242767.0,583219,56805,98],["2021-01",1,4,3,1404137.0,600344,56039,110],["2021-01",1,4,4,1545551.0,641064,62866,119],["2021-01",1,4,5,1276977.0,614026,62123,113],["2021-01",2,0,0,1287221.0,529259,56365,103],["2021-01",2,0,1,1494755.0,718709,67962,122],["2021-01",2,0,2,1330600.0,612834,61462,113],["2021-01",2,0,3,1516078.0,646655,68725,117],["2021-01",2,0,4,1500551.0,629955,64837,117],["2021-01",2,0,5,1429349.0,703709,68008,119],["2021-01",2,1,0,1540149.0,693354,65214,122],["2021-01",2,1,1,1441413.0,601908,59006,110],["2021-01",2,1,2,1577352.0,690352,70053,126],["2021-01",2,1,3,1477232.0,610790,65752,124],["2021-01",2,1,4,1281143.0,526716,52496,98],["2021-01",2,1,5,1462055.0,669961,69124,121],["2021-01",2,2,0,1371364.0,560473,57968,109],["2021-01",2,2,1,1479053.0,695831,67104,118],["2021-01",2,2,2,1344305.0,612187,60572,112],["2021-01",2,2,3,1307307.0,612269,60473,107],["2021-01",2,2,4,1602916.0,748410,70074,126],["2021-01",2,2,5,1352331.0,610645,55353,104],["2021-01",2,3,0,1304682.0,556767,52829,102],["2021-01",2,3,1,1298972.0,512698,53881,100],["2021-01",2,3,2,1429690.0,597474,56145,110],["2021-01",2,3,3,1334923.0,598524,61434,107],["2021-01",2,3,4,1547804.0,709585,70381,124],["2021-01",2,3,5,1445585.0,597962,63878,111],["2021-01",2,4,0,1285484.0,568341,63602,111],["2021-01",2,4,1,1551990.0,659635,70312,124],["2021-01",2,4,2,1338443.0,526456,55189,102],["2021-01",2,4,3,1421613.0,597984,63541,111],["2021-01",2,4,4,1488089.0,591131,60145,111],["2021-01",2,4,5,1362928.0,561105,61412,109],["2021-01",3,0,0,1231518.0,527062,57048,99],["2021-01",3,0,1,1596646.0,675433,63073,123],["2021-01",3,0,2,1539456.0,692029,61085,115],["2021-01",3,0,3,1521108.0,633993,60130,119],["2021-01",3,0,4,1287289.0,550413,58489,101],["2021-01",3,0,5,1399777.0,615838,57975,114],["2021-01",3,1,0,1501704.0,677853,67204,120],["2021-01",3,1,1,1304871.0,610830,65593,113],["2021-01",3,1,2,1511949.0,650374,61416,120],["2021-01",3,1,3,1277703.0,610309,61420,110],["2021-01",3,1,4,1518754.0,727992,64401,124],["2021-01",3,1,5,1572067.0,636999,66378,123],["2021-01",3,2,0,1307258.0,567827,56043,105],["2021-01",3,2,1,1514508.0,592485,66332,115],["2021-01",3,2,2,1455306.0,601382,60163,112],["2021-01",3,2,3,1197332.0,549740,55134,100],["2021-01",3,2,4,1390967.0,581091,60767,106],["2021-01",3,2,5,1570016.0,675776,68684,123],["2021-01",3,3,0,1484937.0,645948,61833,122],["2021-01",3,3,1,1394214.0,601489,57275,110],["2021-01",3,3,2,1513271.0,650258,67855,118],["2021-01",3,3,3,1319251.0,624053,60731,109],["2021-01",3,3,4,1204680.0,557160,52566,98],["2021-01",3,3,5,1530293.0,596035,64738,116],["2021-01",3,4,0,1370670.0,554053,57001,104],["2021-01",3,4,1,1470168.0,683435,69707,121],["2021-01",3,4,2,1499536.0,614378,63119,124],["2021-01",3,4,3,1427958.0,709542,67202,121],["2021-01",3,4,4,1522256.0,659267,65974,122],["2021-01",3,4,5,1459069.0,598981,66589,114],["2021-01",4,0,0,1392696.0,606177,64575,114],["2021-01",4,0,1,1346199.0,612048,53597,106],["2021-01",4,0,2,1568802.0,710783,71283,125],["2021-01",4,0,3,1538892.0,644229,64719,124],["2021-01",4,0,4,1493445.0,712646,67111,122],["2021-01",4,0,5,1196980.0,549439,52401,96],["2021-01",4,1,0,1496963.0,683650,66923,122],["2021-01",4,1,1,1300941.0,579328,57931,105],["2021-01",4,1,2,1402845.0,646825,63791,113],["2021-01",4,1,3,1306029.0,568557,57081,103],["2021-01",4,1,4,1480578.0,618647,67538,113],["2021-01",4,1,5,1231024.0,552930,50598,103],["2021-01",4,2,0,1407002.0,594678,67225,112],["2021-01",4,2,1,1166239.0,493469,50677,92],["2021-01",4,2,2,1386467.0,607569,61566,108],["2021-01",4,2,3,1339445.0,575183,56024,109],["2021-01",4,2,4,1548487.0,724504,72062,127],["2021-01",4,2,5,1527403.0,665832,68561,120],["2021-01",4,3,0,1606861.0,716963,71617,128],["2021-01",4,3,1,1277584.0,565224,58022,107],["2021-01",4,3,2,1230683.0,555561,56875,99],["2021-01",4,3,3,1450883.0,622667,64976,122],["2021-01",4,3,4,1391659.0,616977,63198,112],["2021-01",4,3,5,1348337.0,607093,57947,109],["2021-01",4,4,0,1561114.0,696494,71006,126],["2021-01",4,4,1,1433861.0,628636,67628,115],["2021-01",4,4,2,1550085.0,688986,64543,119],["2021-01",4,4,3,1643244.0,701131,73525,133],["2021-01",4,4,4,1429299.0,598721,62696,114],["2021-01",4,4,5,1569610.0,571388,69872,123],["2021-02",0,0,0,1659929.0,694766,65988,125],["2021-02",0,0,1,1336269.0,501379,57275,103],["2021-02",0,0,2,1259005.0,545901,55072,97],["2021-02",0,0,3,1320099.0,614810,59104,112],["2021-02",0,0,4,1309879.0,603284,58604,105],["2021-02",0,0,5,1115930.0,524425,52740,94],["2021-02",0,1,0,1217073.0,549312,54348,100],["2021-02",0,1,1,1497388.0,604450,64397,113],["2021-02",0,1,2,1420710.0,649880,64306,116],["2021-02",0,1,3,1155832.0,546721,53485,94],["2021-02",0,1,4,1130643.0,558894,49538,92],["2021-02",0,1,5,1064963.0,521118,46895,89],["2021-02",0,2,0,1574927.0,674399,67948,121],["2021-02",0,2,1,1220583.0,598081,55449,101],["2021-02",0,2,2,1455975.0,599539,64809,114],["2021-02",0,2,3,1348747.0,549427,55162,104],["2021-02",0,2,4,1241411.0,591135,57358,105],["2021-02",0,2,5,1226389.0,514814,51717,98],["2021-02",0,3,0,1247916.0,496616,53951,95],["2021-02",0,3,1,1294236.0,542035,55511,99],["2021-02",0,3,2,1342594.0,630193,56504,105],["2021-02",0,3,3,1343876.0,607295,55712,110],["2021-02",0,3,4,1204153.0,543982,49204,98],["2021-02",0,3,5,1177359.0,543461,51751,98],["2021-02",0,4,0,1271344.0,558688,52696,101],["2021-02",0,4,1,1640498.0,683812,70979,129],["2021-02",0,4,2,1248088.0,591527,54116,98],["2021-02",0,4,3,1493686.0,630829,66070,119],["2021-02",0,4,4,1354666.0,598265,57605,105],["2021-02",0,4,5,1537526.0,647102,69226,119],["2021-02",1,0,0,1109917.0,528318,49399,91],["2021-02",1,0,1,1367027.0,599074,60425,110],["2021-02",1,0,2,1298604.0,607082,60974,108],["2021-02",1,0,3,1260471.0,539514,58455,102],["2021-02",1,0,4,1385654.0,591657,62630,114],["2021-02",1,0,5,1137697.0,517717,48150,92],["2021-02",1,1,0,1413585.0,616813,55420,110],["2021-02",1,1,1,939481.0,417537,45296,78],["2021-02",1,1,2,1511695.0,670323,70150,122],["2021-02",1,1,3,1360169.0,613983,62399,109],["2021-02",1,1,4,1245218.0,576525,53832,100],["2021-02",1,1,5,1199993.0,504262,53958,95],["2021-02",1,2,0,939542.0,375572,40780,75],["2021-02",1,2,1,992514.0,453496,46736,85],["2021-02",1,2,2,1193223.0,588592,56925,100],["2021-02",1,2,3,1258131.0,608354,55226,106],["2021-02",1,2,4,1079629.0,485465,45299,86],["2021-02",1,2,5,1246408.0,542022,52019,105],["2021-02",1,3,0,1274234.0,593452,59452,99],["2021-02",1,3,1,990800.0,442465,47840,82],["2021-02",1,3,2,1505100.0,645763,63885,114],["2021-02",1,3,3,1512430.0,693599,66519,124],["2021-02",1,3,4,1481340.0,640392,62377,117],["2021-02",1,3,5,1110808.0,491718,45521,88],["2021-02",1,4,0,1215505.0,538903,50736,96],["2021-02",1,4,1,1106931.0,433499,44921,83],["2021-02",1,4,2,1289716.0,544953,52829,101],["2021-02",1,4,3,1227437.0,551565,51647,99],["2021-02",1,4,4,1340510.0,581511,57137,103],["2021-02",1,4,5,1422538.0,642077,66488,116],["2021-02",2,0,0,1316380.0,556231,56196,108],["2021-02",2,0,1,1182514.0,545959,54988,93],["2021-02",2,0,2,1221808.0,529580,51905,98],["2021-02",2,0,3,1003136.0,424969,48443,82],["2021-02",2,0,4,1401567.0,598495,60267,111],["2021-02",2,0,5,985696.0,436249,43435,83],["2021-02",2,1,0,1276451.0,516543,51406,100],["2021-02",2,1,1,1360922.0,621084,59354,114],["2021-02",2,1,2,1135166.0,550137,53224,103],["2021-02",2,1,3,1227458.0,509113,52581,97],["2021-02",2,1,4,1153342.0,494289,56378,92],["2021-02",2,1,5,1347682.0,618992,65079,115],["2021-02",2,2,0,1300970.0,524089,55247,101],["2021-02",2,2,1,1252020.0,562679,52613,99],["2021-02",2,2,2,1036011.0,501924,45058,85],["2021-02",2,2,3,1257933.0,553561,59279,100],["2021-02",2,2,4,1155612.0,511764,48841,92],["2021-02",2,2,5,1347517.0,553583,58213,107],["2021-02",2,3,0,1272823.0,579448,54328,102],["2021-02",2,3,1,1148497.0,472374,47317,89],["2021-02",2,3,2,1149827.0,548365,51021,96],["2021-02",2,3,3,1345341.0,640589,63336,111],["2021-02",2,3,4,1310954.0,570255,59585,107],["2021-02",2,3,5,1407816.0,615194,53442,110],["2021-02",2,4,0,1337895.0,557120,60449,106],["2021-02",2,4,1,1281589.0,534779,54535,99],["2021-02",2,4,2,1092144.0,512830,46951,86],["2021-02",2,4,3,1361345.0,631449,57918,109],["2021-02",2,4,4,1194348.0,534008,53745,99],["2021-02",2,4,5,1299824.0,559121,57630,103],["2021-02",3,0,0,1091690.0,472596,48126,87],["2021-02",3,0,1,1116820.0,498187,52891,95],["2021-02",3,0,2,1267634.0,497674,58070,105],["2021-02",3,0,3,1162953.0,507562,51115,89],["2021-02",3,0,4,1357147.0,579990,57388,107],["2021-02",3,0,5,1186689.0,560260,54969,95],["2021-02",3,1,0,1248725.0,521735,63117,99],["2021-02",3,1,1,1413434.0,585424,58657,105],["2021-02",3,1,2,1372765.0,616335,59646,112],["2021-02",3,1,3,1259476.0,565216,55320,101],["2021-02",3,1,4,1186811.0,528996,52973,92],["2021-02",3,1,5,1413130.0,656052,62241,111],["2021-02",3,2,0,1433706.0,652727,60584,112],["2021-02",3,2,1,1092087.0,487820,50733,90],["2021-02",3,2,2,1355341.0,606374,54678,101],["2021-02",3,2,3,1385669.0,577406,56539,110],["2021-02",3,2,4,1284833.0,603233,59545,103],["2021-02",3,2,5,1507339.0,644074,69323,121],["2021-02",3,3,0,1252424.0,499479,55230,99],["2021-02",3,3,1,1175105.0,546246,47841,94],["2021-02",3,3,2,1260720.0,554367,54168,97],["2021-02",3,3,3,1250407.0,596326,57391,104],["2021-02",3,3,4,1244351.0,579810,58464,104],["2021-02",3,3,5,1483048.0,637461,65865,120],["2021-02",3,4,0,1381202.0,608685,62515,114],["2021-02",3,4,1,1255659.0,550917,58456,102],["2021-02",3,4,2,1240058.0,554465,51956,102],["2021-02",3,4,3,1411047.0,598169,66271,116],["2021-02",3,4,4,1117862.0,482580,54406,90],["2021-02",3,4,5,1475902.0,617229,65153,116],["2021-02",4,0,0,1387008.0,649023,65185,111],["2021-02",4,0,1,975817.0,462315,48148,79],["2021-02",4,0,2,1280840.0,594224,55905,107],["2021-02",4,0,3,1507737.0,672034,62557,124],["2021-02",4,0,4,1194906.0,510495,55184,91],["2021-02",4,0,5,1436150.0,625993,60421,117],["2021-02",4,1,0,1160238.0,542544,49942,95],["2021-02",4,1,1,1402809.0,618074,57499,110],["2021-02",4,1,2,1212725.0,508490,51308,96],["2021-02",4,1,3,1534229.0,677545,73578,120],["2021-02",4,1,4,1138256.0,494246,51120,92],["2021-02",4,1,5,1065270.0,477475,50444,85],["2021-02",4,2,0,1382812.0,548091,59683,107],["2021-02",4,2,1,1245647.0,556626,54113,105],["2021-02",4,2,2,1347044.0,558012,49763,104],["2021-02",4,2,3,1363860.0,633477,62492,110],["2021-02",4,2,4,1291784.0,576235,57590,107],["2021-02",4,2,5,1231592.0,534020,55151,96],["2021-02",4,3,0,1435917.0,585645,62086,107],["2021-02",4,3,1,1055965.0,457092,45321,84],["2021-02",4,3,2,1318818.0,638238,58295,111],["2021-02",4,3,3,1220186.0,538504,56990,101],["2021-02",4,3,4,1203408.0,562334,54289,98],["2021-02",4,3,5,1195291.0,526043,51516,99],["2021-02",4,4,0,1401552.0,613557,63811,111],["2021-02",4,4,1,1234266.0,497184,55391,95],["2021-02",4,4,2,1307885.0,624308,56449,104],["2021-02",4,4,3,1241945.0,552639,57026,98],["2021-02",4,4,4,1353783.0,612118,58795,112],["2021-02",4,4,5,1360457.0,542758,61645,109],["2021-03",0,0,0,1209735.0,546692,57049,94],["2021-03",0,0,1,1429405.0,626654,63758,112],["2021-03",0,0,2,1302429.0,561077,52823,102],["2021-03",0,0,3,1663362.0,672301,75137,130],["2021-03",0,0,4,1563518.0,663878,65376,118],["2021-03",0,0,5,1450394.0,605185,63797,115],["2021-03",0,1,0,1504843.0,623836,67391,116],["2021-03",0,1,1,1576519.0,698358,73908,129],["2021-03",0,1,2,1495548.0,661181,63753,119],["2021-03",0,1,3,1379329.0,614554,64253,110],["2021-03",0,1,4,1192821.0,561097,48367,98],["2021-03",0,1,5,1468087.0,599340,62081,112],["2021-03",0,2,0,1645791.0,677470,73565,129],["2021-03",0,2,1,1416248.0,621290,59772,115],["2021-03",0,2,2,1514174.0,660182,72143,127],["2021-03",0,2,3,1595842.0,762030,70559,132],["2021-03",0,2,4,1277212.0,567906,58331,103],["2021-03",0,2,5,1453622.0,650742,70680,125],["2021-03",0,3,0,1466178.0,656961,60055,114],["2021-03",0,3,1,1143222.0,523662,49616,93],["2021-03",0,3,2,1361209.0,609836,64430,112],["2021-03",0,3,3,1426675.0,648094,61564,115],["2021-03",0,3,4,1344407.0,686506,64432,110],["2021-03",0,3,5,1435046.0,659251,64582,124],["2021-03",0,4,0,1253115.0,595373,54596,102],["2021-03",0,4,1,1432518.0,645785,61291,115],["2021-03",0,4,2,1496146.0,702510,67205,124],["2021-03",0,4,3,1770469.0,749009,72598,138],["2021-03",0,4,4,1437355.0,607677,67009,116],["2021-03",0,4,5,1787838.0,791200,78422,143],["2021-03",1,0,0,1448599.0,639627,62622,116],["2021-03",1,0,1,1445314.0,635706,65037,117],["2021-03",1,0,2,1360614.0,625771,57038,111],["2021-03",1,0,3,1422407.0,595186,62783,111],["2021-03",1,0,4,1312220.0,549064,61299,106],["2021-03",1,0,5,1370929.0,564877,58549,109],["2021-03",1,1,0,1527082.0,660349,66849,121],["2021-03",1,1,1,1399288.0,639859,61348,111],["2021-03",1,1,2,1359367.0,610133,59934,115],["2021-03",1,1,3,1346637.0,530020,58676,102],["2021-03",1,1,4,1242835.0,574989,55933,102],["2021-03",1,1,5,1831461.0,724583,75607,137],["2021-03",1,2,0,1412708.0,633566,63202,116],["2021-03",1,2,1,1231705.0,532045,57555,104],["2021-03",1,2,2,1664076.0,763835,77980,132],["2021-03",1,2,3,1451632.0,591739,61101,111],["2021-03",1,2,4,1350952.0,593431,60043,103],["2021-03",1,2,5,1022442.0,529741,50536,91],["2021-03",1,3,0,1473877.0,651477,63106,116],["2021-03",1,3,1,1465620.0,604342,58864,114],["2021-03",1,3,2,1387057.0,623631,65911,118],["2021-03",1,3,3,1514329.0,639452,65223,121],["2021-03",1,3,4,1474898.0,613796,61996,119],["2021-03",1,3,5,1316168.0,583234,57939,105],["2021-03",1,4,0,1277017.0,573411,57363,106],["2021-03",1,4,1,1217264.0,544141,53787,96],["2021-03",1,4,2,1380846.0,659078,61695,111],["2021-03",1,4,3,1119426.0,500552,50724,92],["2021-03",1,4,4,1308603.0,632419,64672,109],["2021-03",1,4,5,1262645.0,573828,56523,104],["2021-03",2,0,0,1131679.0,502495,50260,92],["2021-03",2,0,1,1267943.0,596729,56385,102],["2021-03",2,0,2,1621908.0,695032,71660,130],["2021-03",2,0,3,1421302.0,655082,62166,117],["2021-03",2,0,4,1449150.0,626637,57623,113],["2021-03",2,0,5,1417478.0,637655,65137,116],["2021-03",2,1,0,1336146.0,565090,56023,102],["2021-03",2,1,1,1615881.0,709867,72576,128],["2021-03",2,1,2,1311997.0,591237,58430,107],["2021-03",2,1,3,1494052.0,692475,59996,116],["2021-03",2,1,4,1423533.0,651031,66694,115],["2021-03",2,1,5,1364651.0,607516,57065,109],["2021-03",2,2,0,1660823.0,731645,73403,138],["2021-03",2,2,1,1420012.0,588926,62992,111],["2021-03",2,2,2,1423982.0,612579,65606,111],["2021-03",2,2,3,1440297.0,608339,66229,114],["2021-03",2,2,4,1242541.0,590436,58727,99],["2021-03",2,2,5,1448993.0,736714,76151,126],["2021-03",2,3,0,1649848.0,685443,69209,131],["2021-03",2,3,1,1394477.0,593565,61067,108],["2021-03",2,3,2,1239911.0,580847,52721,102],["2021-03",2,3,3,1478042.0,670048,66295,118],["2021-03",2,3,4,1534702.0,628897,68592,120],["2021-03",2,3,5,1432910.0,676824,62019,113],["2021-03",2,4,0,1451110.0,708483,66720,119],["2021-03",2,4,1,1327185.0,588884,59986,103],["2021-03",2,4,2,1343718.0,614990,58732,105],["2021-03",2,4,3,1534387.0,662870,70199,119],["2021-03",2,4,4,1323499.0,587100,59637,109],["2021-03",2,4,5,1322655.0,569852,58530,102],["2021-03",3,0,0,1541561.0,697831,72711,125],["2021-03",3,0,1,1397946.0,622210,59190,113],["2021-03",3,0,2,1342816.0,569045,60013,106],["2021-03",3,0,3,1603460.0,675423,69175,130],["2021-03",3,0,4,1626155.0,713732,68851,130],["2021-03",3,0,5,1551082.0,637195,71023,126],["2021-03",3,1,0,1301755.0,637601,59521,108],["2021-03",3,1,1,1358238.0,549693,56776,100],["2021-03",3,1,2,1437128.0,605293,60341,114],["2021-03",3,1,3,1276243.0,545016,53908,101],["2021-03",3,1,4,1456054.0,673033,67736,117],["2021-03",3,1,5,1400285.0,572984,60901,108],["2021-03",3,2,0,1459925.0,674697,64006,121],["2021-03",3,2,1,1419486.0,682593,71516,120],["2021-03",3,2,2,1447418.0,615234,65176,113],["2021-03",3,2,3,1337157.0,626912,62969,109],["2021-03",3,2,4,1417345.0,682994,67427,118],["2021-03",3,2,5,1401642.0,581059,60395,112],["2021-03",3,3,0,1474621.0,612978,60643,114],["2021-03",3,3,1,1855665.0,799708,77236,141],["2021-03",3,3,2,1518350.0,635772,67688,120],["2021-03",3,3,3,1242480.0,528958,49960,99],["2021-03",3,3,4,1331166.0,654121,55872,112],["2021-03",3,3,5,1405420.0,629887,60913,117],["2021-03",3,4,0,1454839.0,668820,65825,118],["2021-03",3,4,1,1464579.0,619369,66902,121],["2021-03",3,4,2,1331858.0,611145,61402,109],["2021-03",3,4,3,1354509.0,626505,60920,115],["2021-03",3,4,4,1384118.0,556578,55435,108],["2021-03",3,4,5,1330208.0,565511,58031,106],["2021-03",4,0,0,1442718.0,557866,61716,111],["2021-03",4,0,1,1577876.0,650345,68342,122],["2021-03",4,0,2,1462925.0,703600,64983,120],["2021-03",4,0,3,1378284.0,590834,62258,113],["2021-03",4,0,4,1494983.0,629215,66379,116],["2021-03",4,0,5,1108549.0,515531,49126,90],["2021-03",4,1,0,1380480.0,622101,63734,114],["2021-03",4,1,1,1383502.0,603597,62337,114],["2021-03",4,1,2,1578276.0,709831,71354,122],["2021-03",4,1,3,1193487.0,534878,52228,95],["2021-03",4,1,4,1629914.0,710780,76313,133],["2021-03",4,1,5,1472188.0,701209,64224,118],["2021-03",4,2,0,1135114.0,536908,46020,92],["2021-03",4,2,1,1476099.0,663869,68778,120],["2021-03",4,2,2,1365403.0,621786,61186,113],["2021-03",4,2,3,1334057.0,610132,60724,105],["2021-03",4,2,4,1464267.0,609407,60774,112],["2021-03",4,2,5,1417183.0,663820,63675,117],["2021-03",4,3,0,1359048.0,648698,59300,111],["2021-03",4,3,1,1341848.0,633475,57656,108],["2021-03",4,3,2,1350749.0,572237,61505,111],["2021-03",4,3,3,1278802.0,550550,48566,98],["2021-03",4,3,4,1464451.0,626246,61839,117],["2021-03",4,3,5,1329049.0,566378,59320,105],["2021-03",4,4,0,1383822.0,633486,60993,111],["2021-03",4,4,1,1412211.0,646434,57013,109],["2021-03",4,4,2,1329458.0,612272,59240,108],["2021-03",4,4,3,1355454.0,598635,57761,106],["2021-03",4,4,4,1384117.0,611600,60767,111],["2021-03",4,4,5,1268893.0,586064,53533,102],["2021-04",0,0,0,1242711.0,500073,54187,99],["2021-04",0,0,1,1273669.0,558104,52239,97],["2021-04",0,0,2,1559441.0,601281,61998,117],["2021-04",0,0,3,1272488.0,490340,51185,99],["2021-04",0,0,4,1158606.0,503480,55159,96],["2021-04",0,0,5,1636115.0,701491,71058,126],["2021-04",0,1,0,1235778.0,519589,53361,98],["2021-04",0,1,1,1477624.0,603745,63950,114],["2021-04",0,1,2,1401076.0,628768,62219,109],["2021-04",0,1,3,1261068.0,614114,55740,102],["2021-04",0,1,4,1360805.0,601829,60335,109],["2021-04",0,1,5,1253109.0,568141,55391,100],["2021-04",0,2,0,1442253.0,614423,60357,114],["2021-04",0,2,1,1632475.0,753321,73422,136],["2021-04",0,2,2,1265704.0,592898,55123,101],["2021-04",0,2,3,1538147.0,638715,66320,127],["2021-04",0,2,4,1473227.0,675029,62875,119],["2021-04",0,2,5,1334939.0,635449,58858,108],["2021-04",0,3,0,1549266.0,683480,68482,121],["2021-04",0,3,1,1337394.0,624879,62514,107],["2021-04",0,3,2,1225349.0,521873,53340,99],["2021-04",0,3,3,1421581.0,667434,75441,123],["2021-04",0,3,4,1462662.0,617817,60844,119],["2021-04",0,3,5,1410424.0,593696,60557,112],["2021-04",0,4,0,1252792.0,517935,53059,100],["2021-04",0,4,1,1398345.0,610570,57498,104],["2021-04",0,4,2,1443872.0,626057,59552,116],["2021-04",0,4,3,1602513.0,647350,64902,121],["2021-04",0,4,4,1341517.0,542819,56541,101],["2021-04",0,4,5,1815707.0,740489,73544,137],["2021-04",1,0,0,1301007.0,610599,54556,99],["2021-04",1,0,1,1471373.0,652679,65377,119],["2021-04",1,0,2,1548500.0,654005,66842,125],["2021-04",1,0,3,1151232.0,520179,51453,92],["2021-04",1,0,4,1272009.0,553362,56510,100],["2021-04",1,0,5,1065985.0,462219,40275,83],["2021-04",1,1,0,1328869.0,617147,57890,110],["2021-04",1,1,1,1403364.0,633814,59766,111],["2021-04",1,1,2,1261914.0,602346,56753,108],["2021-04",1,1,3,1096947.0,479871,48165,89],["2021-04",1,1,4,1399753.0,592717,64847,110],["2021-04",1,1,5,1252552.0,611229,61473,106],["2021-04",1,2,0,1483364.0,689108,64693,118],["2021-04",1,2,1,1104217.0,502408,49405,91],["2021-04",1,2,2,1470840.0,713767,61795,120],["2021-04",1,2,3,1400474.0,546918,59958,106],["2021-04",1,2,4,1176519.0,509300,51128,95],["2021-04",1,2,5,1497321.0,583963,67647,117],["2021-04",1,3,0,1337978.0,583734,57249,109],["2021-04",1,3,1,1193835.0,558087,58463,98],["2021-04",1,3,2,1347656.0,571070,58092,105],["2021-04",1,3,3,1148503.0,526570,49737,92],["2021-04",1,3,4,1574359.0,659090,64079,123],["2021-04",1,3,5,1404505.0,639582,60194,113],["2021-04",1,4,0,1382406.0,606976,59151,110],["2021-04",1,4,1,1434943.0,669194,63170,118],["2021-04",1,4,2,1407587.0,615721,63310,115],["2021-04",1,4,3,1463693.0,597510,57562,113],["2021-04",1,4,4,1430824.0,582138,61073,112],["2021-04",1,4,5,1403338.0,574740,60913,109],["2021-04",2,0,0,1262596.0,588187,57344,101],["2021-04",2,0,1,1422611.0,606998,64728,111],["2021-04",2,0,2,1288047.0,596289,56797,106],["2021-04",2,0,3,1393889.0,606739,57478,113],["2021-04",2,0,4,1405542.0,642141,68296,112],["2021-04",2,0,5,1354097.0,615448,58061,109],["2021-04",2,1,0,1361707.0,628331,59769,109],["2021-04",2,1,1,1158333.0,510242,50736,92],["2021-04",2,1,2,1621892.0,753555,69059,133],["2021-04",2,1,3,1386035.0,596606,61119,113],["2021-04",2,1,4,1526471.0,582921,62698,116],["2021-04",2,1,5,1346503.0,591979,58625,105],["2021-04",2,2,0,1361465.0,626521,60971,109],["2021-04",2,2,1,1163116.0,550447,49556,96],["2021-04",2,2,2,1288983.0,632207,58264,105],["2021-04",2,2,3,1395939.0,574494,61466,112],["2021-04",2,2,4,1186922.0,537626,51726,93],["2021-04",2,2,5,1417114.0,552173,58508,106],["2021-04",2,3,0,1484216.0,632489,67387,116],["2021-04",2,3,1,1275450.0,638797,56726,106],["2021-04",2,3,2,1397326.0,616764,60573,109],["2021-04",2,3,3,1277745.0,563347,60782,103],["2021-04",2,3,4,1502029.0,639012,63787,119],["2021-04",2,3,5,1413516.0,622192,59866,112],["2021-04",2,4,0,1498534.0,644925,63355,116],["2021-04",2,4,1,1344844.0,642985,59575,115],["2021-04",2,4,2,1436347.0,564471,57456,110],["2021-04",2,4,3,1463859.0,647829,68635,117],["2021-04",2,4,4,1358506.0,637424,64697,118],["2021-04",2,4,5,1408997.0,607876,58162,112],["2021-04",3,0,0,1408529.0,636236,70361,116],["2021-04",3,0,1,1327798.0,597889,59744,109],["2021-04",3,0,2,1558701.0,693263,68160,125],["2021-04",3,0,3,1300688.0,601849,53822,107],["2021-04",3,0,4,1260064.0,568215,56511,104],["2021-04",3,0,5,1328367.0,569020,56168,104],["2021-04",3,1,0,1540018.0,745836,76506,132],["2021-04",3,1,1,1322266.0,558496,57072,110],["2021-04",3,1,2,1488533.0,719613,67028,125],["2021-04",3,1,3,1471635.0,656403,58760,115],["2021-04",3,1,4,1366801.0,544219,56847,105],["2021-04",3,1,5,1273284.0,587153,57086,101],["2021-04",3,2,0,1341083.0,596225,56759,109],["2021-04",3,2,1,1131554.0,507516,46319,90],["2021-04",3,2,2,1358204.0,566233,59844,109],["2021-04",3,2,3,1487740.0,639256,65433,120],["2021-04",3,2,4,1237780.0,517622,53798,96],["2021-04",3,2,5,1320330.0,539165,56293,105],["2021-04",3,3,0,1309658.0,507538,54874,103],["2021-04",3,3,1,1435442.0,664651,67266,117],["2021-04",3,3,2,1412687.0,681420,63466,117],["2021-04",3,3,3,1169570.0,524347,56835,96],["2021-04",3,3,4,1212831.0,529960,56384,99],["2021-04",3,3,5,1446959.0,681747,66488,121],["2021-04",3,4,0,1330844.0,604855,60549,111],["2021-04",3,4,1,1408275.0,596511,57609,107],["2021-04",3,4,2,1457848.0,644857,66545,118],["2021-04",3,4,3,1525340.0,695875,71094,122],["2021-04",3,4,4,1307730.0,628955,64551,114],["2021-04",3,4,5,1315943.0,552110,52297,104],["2021-04",4,0,0,1359470.0,599422,61119,112],["2021-04",4,0,1,1135629.0,514665,52562,95],["2021-04",4,0,2,1502916.0,654854,62584,117],["2021-04",4,0,3,1292253.0,562868,57213,103],["2021-04",4,0,4,1503235.0,714523,65037,123],["2021-04",4,0,5,1370958.0,599861,55004,105],["2021-04",4,1,0,1286560.0,594313,56533,104],["2021-04",4,1,1,1341589.0,540031,59481,100],["2021-04",4,1,2,1191851.0,511770,52186,96],["2021-04",4,1,3,1346266.0,602229,56298,108],["2021-04",4,1,4,1369701.0,614854,65026,115],["2021-04",4,1,5,1371776.0,599826,60851,113],["2021-04",4,2,0,1507846.0,685936,64149,118],["2021-04",4,2,1,1276526.0,624640,60699,108],["2021-04",4,2,2,1111349.0,525974,55539,90],["2021-04",4,2,3,1557818.0,733410,67642,126],["2021-04",4,2,4,1284770.0,508662,57695,102],["2021-04",4,2,5,1479732.0,673591,60172,118],["2021-04",4,3,0,1521264.0,678915,65209,120],["2021-04",4,3,1,1252225.0,577615,50564,102],["2021-04",4,3,2,1401977.0,686319,66953,116],["2021-04",4,3,3,1619599.0,694229,67240,125],["2021-04",4,3,4,1412053.0,600811,57146,110],["2021-04",4,3,5,1443746.0,630547,63096,118],["2021-04",4,4,0,1494417.0,616789,63106,116],["2021-04",4,4,1,1173022.0,513906,51014,93],["2021-04",4,4,2,1434183.0,647555,61807,114],["2021-04",4,4,3,1539661.0,748763,74218,129],["2021-04",4,4,4,1337119.0,586265,61291,103],["2021-04",4,4,5,1177154.0,510923,49027,89],["2021-05",0,0,0,1367442.0,587660,61403,112],["2021-05",0,0,1,1567380.0,655017,63185,127],["2021-05",0,0,2,1322349.0,587231,55211,108],["2021-05",0,0,3,1421455.0,634603,62618,112],["2021-05",0,0,4,1380567.0,578257,56969,109],["2021-05",0,0,5,1371268.0,594280,61522,111],["2021-05",0,1,0,1502205.0,670066,66846,118],["2021-05",0,1,1,1192856.0,609072,53119,100],["2021-05",0,1,2,1427671.0,605547,59490,112],["2021-05",0,1,3,1102879.0,564862,53723,98],["2021-05",0,1,4,1319852.0,601037,61349,109],["2021-05",0,1,5,1402648.0,602372,57145,108],["2021-05",0,2,0,1436319.0,620084,66955,116],["2021-05",0,2,1,1529926.0,606611,62103,115],["2021-05",0,2,2,1247457.0,543539,55139,101],["2021-05",0,2,3,1359729.0,569560,55218,102],["2021-05",0,2,4,1319756.0,618865,57900,104],["2021-05",0,2,5,1510151.0,657254,74924,121],["2021-05",0,3,0,1415456.0,565357,62026,111],["2021-05",0,3,1,1205656.0,549269,55134,98],["2021-05",0,3,2,1378262.0,619457,65303,119],["2021-05",0,3,3,1346651.0,538314,59669,109],["2021-05",0,3,4,1661929.0,751069,77029,132],["2021-05",0,3,5,1257992.0,608441,56605,106],["2021-05",0,4,0,1304337.0,568125,54046,105],["2021-05",0,4,1,1191016.0,574412,57518,102],["2021-05",0,4,2,1422818.0,662865,61774,113],["2021-05",0,4,3,1598530.0,727831,69151,129],["2021-05",0,4,4,1414165.0,585474,62717,111],["2021-05",0,4,5,1488486.0,607437,64002,118],["2021-05",1,0,0,1390333.0,637828,60249,110],["2021-05",1,0,1,1394348.0,670526,64130,116],["2021-05",1,0,2,1339298.0,587440,56518,109],["2021-05",1,0,3,1631890.0,718701,69275,128],["2021-05",1,0,4,1431648.0,635393,60887,113],["2021-05",1,0,5,1660011.0,683239,70883,128],["2021-05",1,1,0,1354876.0,583935,55964,105],["2021-05",1,1,1,1461093.0,654607,64415,115],["2021-05",1,1,2,1457101.0,641612,54873,110],["2021-05",1,1,3,1339760.0,577417,60748,110],["2021-05",1,1,4,1324171.0,631774,65492,113],["2021-05",1,1,5,1358750.0,606348,59181,110],["2021-05",1,2,0,1713857.0,726414,74175,135],["2021-05",1,2,1,1483570.0,635409,65914,115],["2021-05",1,2,2,1452311.0,670002,61396,120],["2021-05",1,2,3,1297256.0,564591,57132,104],["2021-05",1,2,4,1481116.0,634381,70517,124],["2021-05",1,2,5,1221926.0,528109,51245,99],["2021-05",1,3,0,1821655.0,786658,78572,141],["2021-05",1,3,1,1483583.0,656433,62822,115],["2021-05",1,3,2,1472085.0,615699,60680,117],["2021-05",1,3,3,1550268.0,733568,75380,128],["2021-05",1,3,4,1294726.0,581331,55159,101],["2021-05",1,3,5,1142919.0,525936,55200,93],["2021-05",1,4,0,1508759.0,702010,71745,128],["2021-05",1,4,1,973937.0,438089,44504,81],["2021-05",1,4,2,1340522.0,636109,58796,110],["2021-05",1,4,3,1443945.0,606737,61987,113],["2021-05",1,4,4,1189058.0,536626,54058,94],["2021-05",1,4,5,1213231.0,595689,54110,104],["2021-05",2,0,0,1486247.0,659213,65922,119],["2021-05",2,0,1,1319771.0,627976,65482,113],["2021-05",2,0,2,1390968.0,642064,63489,115],["2021-05",2,0,3,1549392.0,668256,61739,121],["2021-05",2,0,4,1591739.0,679030,66088,122],["2021-05",2,0,5,1181603.0,591501,58874,99],["2021-05",2,1,0,1627887.0,731572,74066,134],["2021-05",2,1,1,1586278.0,695059,63137,124],["2021-05",2,1,2,1281632.0,573233,58237,103],["2021-05",2,1,3,1580858.0,746336,73967,128],["2021-05",2,1,4,1178519.0,525530,54049,93],["2021-05",2,1,5,1406018.0,643987,67952,114],["2021-05",2,2,0,1192285.0,589595,55298,101],["2021-05",2,2,1,1576592.0,680984,64636,124],["2021-05",2,2,2,1469046.0,586420,63601,113],["2021-05",2,2,3,1431972.0,659480,63863,115],["2021-05",2,2,4,1567215.0,627166,65822,124],["2021-05",2,2,5,1357090.0,581349,59179,112],["2021-05",2,3,0,1484828.0,690703,69933,124],["2021-05",2,3,1,1542103.0,643548,64371,122],["2021-05",2,3,2,1536371.0,627756,64166,114],["2021-05",2,3,3,1094560.0,516551,52316,89],["2021-05",2,3,4,1411589.0,590897,57170,110],["2021-05",2,3,5,1146378.0,502832,53692,93],["2021-05",2,4,0,1500779.0,672297,65316,119],["2021-05",2,4,1,1545695.0,683749,64708,121],["2021-05",2,4,2,1441822.0,627415,62716,114],["2021-05",2,4,3,1298204.0,575883,60977,110],["2021-05",2,4,4,1222837.0,554175,59688,100],["2021-05",2,4,5,1555456.0,654265,64162,122],["2021-05",3,0,0,1606320.0,738187,77560,136],["2021-05",3,0,1,1589394.0,724526,71339,129],["2021-05",3,0,2,1502485.0,693449,62580,118],["2021-05",3,0,3,1237285.0,551472,49993,100],["2021-05",3,0,4,1395989.0,590412,61344,116],["2021-05",3,0,5,1595455.0,660585,69597,129],["2021-05",3,1,0,1349807.0,547396,56712,105],["2021-05",3,1,1,1627461.0,656296,67729,127],["2021-05",3,1,2,1466929.0,625786,63661,120],["2021-05",3,1,3,1451944.0,628591,61450,117],["2021-05",3,1,4,1353345.0,638194,59040,111],["2021-05",3,1,5,1409670.0,566970,59377,114],["2021-05",3,2,0,1441736.0,582386,62128,113],["2021-05",3,2,1,1214237.0,497987,52187,95],["2021-05",3,2,2,1599211.0,709055,74329,132],["2021-05",3,2,3,1469692.0,659930,64342,115],["2021-05",3,2,4,1260552.0,497279,52046,103],["2021-05",3,2,5,1395155.0,610881,60429,111],["2021-05",3,3,0,1312000.0,567031,57445,103],["2021-05",3,3,1,1467718.0,574857,63817,117],["2021-05",3,3,2,1477833.0,629349,62530,115],["2021-05",3,3,3,1523332.0,623291,67988,119],["2021-05",3,3,4,1567498.0,683250,66671,128],["2021-05",3,3,5,1286641.0,568080,59804,103],["2021-05",3,4,0,1300863.0,626574,62108,108],["2021-05",3,4,1,1500719.0,626078,67812,115],["2021-05",3,4,2,1534018.0,608806,69674,123],["2021-05",3,4,3,1519673.0,730897,72394,122],["2021-05",3,4,4,1569650.0,631247,68797,119],["2021-05",3,4,5,1635213.0,769919,73539,134],["2021-05",4,0,0,1589976.0,702910,67459,127],["2021-05",4,0,1,1167754.0,480391,53442,94],["2021-05",4,0,2,1485474.0,665510,66132,118],["2021-05",4,0,3,1253310.0,532422,55717,99],["2021-05",4,0,4,1150945.0,541017,49550,93],["2021-05",4,0,5,1395937.0,575889,60913,108],["2021-05",4,1,0,1384201.0,639009,71765,119],["2021-05",4,1,1,1632326.0,715579,68716,126],["2021-05",4,1,2,1285950.0,562497,56644,104],["2021-05",4,1,3,1525324.0,666198,62205,115],["2021-05",4,1,4,1391133.0,597269,60066,112],["2021-05",4,1,5,1650486.0,743512,73076,128],["2021-05",4,2,0,1365314.0,612064,56418,112],["2021-05",4,2,1,1264041.0,530992,53351,96],["2021-05",4,2,2,1397735.0,626667,63154,113],["2021-05",4,2,3,1332371.0,609841,56832,109],["2021-05",4,2,4,1415444.0,605997,60016,111],["2021-05",4,2,5,1479974.0,629588,63371,118],["2021-05",4,3,0,1399163.0,615259,64722,115],["2021-05",4,3,1,1545727.0,687232,66653,125],["2021-05",4,3,2,1271572.0,592916,57874,102],["2021-05",4,3,3,1624555.0,775093,77634,136],["2021-05",4,3,4,1315039.0,605147,57526,103],["2021-05",4,3,5,1372484.0,684816,63770,112],["2021-05",4,4,0,1317664.0,571890,54300,103],["2021-05",4,4,1,1378888.0,614213,58171,109],["2021-05",4,4,2,1296017.0,582430,60694,108],["2021-05",4,4,3,1537332.0,765855,67696,128],["2021-05",4,4,4,1283823.0,546365,58708,108],["2021-05",4,4,5,1240686.0,572238,60283,103],["2021-06",0,0,0,1310447.0,554589,57864,107],["2021-06",0,0,1,1363818.0,637246,60875,112],["2021-06",0,0,2,1383920.0,542846,51999,98],["2021-06",0,0,3,1300673.0,612416,55034,108],["2021-06",0,0,4,1425563.0,637187,60184,114],["2021-06",0,0,5,1383916.0,568833,55570,106],["2021-06",0,1,0,1331937.0,628495,62739,112],["2021-06",0,1,1,1195977.0,569541,60348,103],["2021-06",0,1,2,1558951.0,670786,69923,120],["2021-06",0,1,3,1429042.0,691251,70247,120],["2021-06",0,1,4,1374124.0,649264,57668,115],["2021-06",0,1,5,1542024.0,701317,69044,125],["2021-06",0,2,0,1438088.0,655662,65953,118],["2021-06",0,2,1,1631690.0,781402,71547,129],["2021-06",0,2,2,1351516.0,573246,59512,109],["2021-06",0,2,3,1381532.0,609896,61787,110],["2021-06",0,2,4,1407669.0,739050,70172,125],["2021-06",0,2,5,1398323.0,665418,63591,113],["2021-06",0,3,0,1560857.0,623438,70526,121],["2021-06",0,3,1,1241166.0,532005,54437,102],["2021-06",0,3,2,1386060.0,646321,57237,111],["2021-06",0,3,3,1386968.0,609632,60374,113],["2021-06",0,3,4,1320085.0,577768,51452,103],["2021-06",0,3,5,1385067.0,582465,56374,104],["2021-06",0,4,0,1250859.0,593155,58332,105],["2021-06",0,4,1,1120572.0,574107,51530,96],["2021-06",0,4,2,1397846.0,562237,62325,112],["2021-06",0,4,3,1399094.0,622932,62860,110],["2021-06",0,4,4,1565923.0,681965,70162,123],["2021-06",0,4,5,1006790.0,441159,42747,83],["2021-06",1,0,0,1469749.0,660933,67366,118],["2021-06",1,0,1,1306862.0,552466,54329,103],["2021-06",1,0,2,1364421.0,597444,54546,105],["2021-06",1,0,3,1262066.0,582550,53870,102],["2021-06",1,0,4,1200924.0,517237,54372,96],["2021-06",1,0,5,1423320.0,651975,60293,113],["2021-06",1,1,0,1465046.0,668824,59910,116],["2021-06",1,1,1,1233649.0,545999,54824,100],["2021-06",1,1,2,1281118.0,567291,57092,105],["2021-06",1,1,3,1213809.0,574125,54160,100],["2021-06",1,1,4,1458794.0,650258,63421,118],["2021-06",1,1,5,1339947.0,569336,57346,105],["2021-06",1,2,0,1317719.0,638323,60690,110],["2021-06",1,2,1,1295704.0,512175,50918,100],["2021-06",1,2,2,1227448.0,557442,50291,99],["2021-06",1,2,3,1465320.0,646494,66371,117],["2021-06",1,2,4,1249583.0,567713,57786,105],["2021-06",1,2,5,1342680.0,597861,53412,102],["2021-06",1,3,0,1491022.0,716395,66421,118],["2021-06",1,3,1,1395161.0,656329,67788,114],["2021-06",1,3,2,1253897.0,579662,60306,107],["2021-06",1,3,3,1245479.0,537236,57757,102],["2021-06",1,3,4,1244727.0,552411,56581,100],["2021-06",1,3,5,1293559.0,603880,61810,108],["2021-06",1,4,0,1302446.0,610984,58574,106],["2021-06",1,4,1,1071023.0,505213,47869,88],["2021-06",1,4,2,1432289.0,636064,61142,112],["2021-06",1,4,3,1330486.0,529459,58905,103],["2021-06",1,4,4,1385948.0,643656,70696,119],["2021-06",1,4,5,1396425.0,668573,68549,116],["2021-06",2,0,0,1483264.0,654710,64104,117],["2021-06",2,0,1,1351498.0,573728,60236,107],["2021-06",2,0,2,1310979.0,629232,60993,107],["2021-06",2,0,3,1402344.0,648867,65708,114],["2021-06",2,0,4,1579192.0,692834,65379,122],["2021-06",2,0,5,1568489.0,778359,68152,129],["2021-06",2,1,0,1568506.0,625257,60963,122],["2021-06",2,1,1,1282678.0,582892,53516,104],["2021-06",2,1,2,1286877.0,563222,58259,103],["2021-06",2,1,3,1339619.0,588169,60967,113],["2021-06",2,1,4,1165384.0,489889,49752,90],["2021-06",2,1,5,1424446.0,614626,54986,109],["2021-06",2,2,0,1369841.0,581451,59629,106],["2021-06",2,2,1,1135692.0,527610,53125,95],["2021-06",2,2,2,1389398.0,676398,66772,117],["2021-06",2,2,3,1488533.0,681841,68848,117],["2021-06",2,2,4,1316226.0,582119,65175,110],["2021-06",2,2,5,1374187.0,573120,56750,106],["2021-06",2,3,0,1600525.0,721920,68777,127],["2021-06",2,3,1,1324381.0,594333,60007,110],["2021-06",2,3,2,1227248.0,552468,52723,99],["2021-06",2,3,3,1564092.0,680406,72913,130],["2021-06",2,3,4,1373996.0,611378,61447,112],["2021-06",2,3,5,1218061.0,520250,54806,98],["2021-06",2,4,0,1493207.0,594820,61505,114],["2021-06",2,4,1,1292407.0,642792,61232,108],["2021-06",2,4,2,1530458.0,749075,67724,123],["2021-06",2,4,3,1082952.0,511707,51045,89],["2021-06",2,4,4,1206534.0,529501,52815,98],["2021-06",2,4,5,1374013.0,543570,59145,104],["2021-06",3,0,0,1281483.0,595278,59314,102],["2021-06",3,0,1,1333817.0,594623,55820,105],["2021-06",3,0,2,1554409.0,702009,68094,125],["2021-06",3,0,3,1110313.0,500954,45540,83],["2021-06",3,0,4,1532510.0,707650,65577,124],["2021-06",3,0,5,1420788.0,595911,61896,111],["2021-06",3,1,0,1374691.0,543509,56934,103],["2021-06",3,1,1,1494679.0,650469,63504,118],["2021-06",3,1,2,1348782.0,581380,56921,107],["2021-06",3,1,3,1381395.0,627965,61639,111],["2021-06",3,1,4,1247336.0,550592,59615,100],["2021-06",3,1,5,1379491.0,581969,58134,110],["2021-06",3,2,0,1300202.0,556035,56382,101],["2021-06",3,2,1,1216490.0,532901,48446,93],["2021-06",3,2,2,1332756.0,576129,56597,105],["2021-06",3,2,3,1598707.0,717055,67615,124],["2021-06",3,2,4,1392806.0,514155,55077,104],["2021-06",3,2,5,1622011.0,700699,73781,129],["2021-06",3,3,0,1343096.0,563979,60761,106],["2021-06",3,3,1,1305653.0,576128,59049,110],["2021-06",3,3,2,1514494.0,617942,61770,110],["2021-06",3,3,3,1250345.0,571030,55879,101],["2021-06",3,3,4,1650271.0,718267,70033,127],["2021-06",3,3,5,1315661.0,605950,56492,106],["2021-06",3,4,0,1357060.0,563984,59127,106],["2021-06",3,4,1,1413124.0,577526,64167,111],["2021-06",3,4,2,1303755.0,566356,55523,102],["2021-06",3,4,3,1258859.0,585171,56442,104],["2021-06",3,4,4,1644893.0,783203,74138,138],["2021-06",3,4,5,1474388.0,658065,67150,118],["2021-06",4,0,0,1257825.0,502367,55762,96],["2021-06",4,0,1,1197170.0,483792,49409,94],["2021-06",4,0,2,1411761.0,617218,59682,110],["2021-06",4,0,3,1231638.0,552769,57326,99],["2021-06",4,0,4,1540249.0,669503,68513,124],["2021-06",4,0,5,1294516.0,572266,58517,106],["2021-06",4,1,0,1518360.0,664116,60839,120],["2021-06",4,1,1,1452277.0,604014,60293,111],["2021-06",4,1,2,1735262.0,754402,64538,132],["2021-06",4,1,3,1388684.0,596455,60524,113],["2021-06",4,1,4,1458759.0,644899,69477,118],["2021-06",4,1,5,1453220.0,637081,60309,114],["2021-06",4,2,0,1337676.0,602953,56389,108],["2021-06",4,2,1,1386622.0,598603,60371,109],["2021-06",4,2,2,1273210.0,579827,58535,106],["2021-06",4,2,3,1334171.0,569732,55866,103],["2021-06",4,2,4,1346584.0,560347,62073,108],["2021-06",4,2,5,1323329.0,575154,64366,103],["2021-06",4,3,0,1305715.0,532592,56926,105],["2021-06",4,3,1,1428182.0,621420,57943,110],["2021-06",4,3,2,1203011.0,516305,54666,94],["2021-06",4,3,3,1495475.0,666890,69017,120],["2021-06",4,3,4,1384888.0,624830,64241,112],["2021-06",4,3,5,1252059.0,547888,62611,105],["2021-06",4,4,0,1374954.0,598594,57604,108],["2021-06",4,4,1,1372620.0,597690,59461,109],["2021-06",4,4,2,1309476.0,593686,61192,103],["2021-06",4,4,3,1434871.0,673228,61133,116],["2021-06",4,4,4,1468840.0,691767,65625,122],["2021-06",4,4,5,1674896.0,701725,74811,134],["2021-07",0,0,0,1315947.0,593278,61612,105],["2021-07",0,0,1,1496550.0,673351,65296,121],["2021-07",0,0,2,1189330.0,496042,47674,95],["2021-07",0,0,3,1407271.0,632921,64576,115],["2021-07",0,0,4,1406113.0,562296,62526,103],["2021-07",0,0,5,1355014.0,598371,64659,112],["2021-07",0,1,0,1558954.0,718418,70540,126],["2021-07",0,1,1,1314455.0,612124,57502,108],["2021-07",0,1,2,1507218.0,624186,67530,116],["2021-07",0,1,3,1599435.0,705897,71247,128],["2021-07",0,1,4,1723420.0,738509,74686,135],["2021-07",0,1,5,1442458.0,638931,65335,115],["2021-07",0,2,0,1451320.0,653723,61439,112],["2021-07",0,2,1,1624700.0,784418,74068,134],["2021-07",0,2,2,1250222.0,507395,59924,100],["2021-07",0,2,3,1354359.0,636667,57579,106],["2021-07",0,2,4,1737119.0,699095,73008,130],["2021-07",0,2,5,1436669.0,613724,64809,116],["2021-07",0,3,0,1346131.0,577706,59563,109],["2021-07",0,3,1,1212330.0,576404,54147,99],["2021-07",0,3,2,1481973.0,648898,69451,123],["2021-07",0,3,3,1549211.0,668859,72982,125],["2021-07",0,3,4,1476613.0,611621,64592,113],["2021-07",0,3,5,1519321.0,667755,65145,118],["2021-07",0,4,0,1615919.0,724202,69741,127],["2021-07",0,4,1,1315336.0,644322,59780,112],["2021-07",0,4,2,1585750.0,671032,69031,125],["2021-07",0,4,3,1342120.0,629078,59328,104],["2021-07",0,4,4,1382015.0,593034,64365,110],["2021-07",0,4,5,1494634.0,615877,70843,128],["2021-07",1,0,0,1446053.0,632823,63023,112],["2021-07",1,0,1,1410863.0,617232,62123,112],["2021-07",1,0,2,1212293.0,590892,57478,99],["2021-07",1,0,3,1356191.0,575986,60534,104],["2021-07",1,0,4,1550929.0,610397,68161,118],["2021-07",1,0,5,1211461.0,591122,53710,105],["2021-07",1,1,0,1370073.0,565595,62111,106],["2021-07",1,1,1,1451033.0,649698,68194,120],["2021-07",1,1,2,1338084.0,595092,61152,109],["2021-07",1,1,3,1481639.0,611965,63270,115],["2021-07",1,1,4,1347193.0,617640,57895,110],["2021-07",1,1,5,1453087.0,652511,61564,115],["2021-07",1,2,0,1461001.0,609304,61026,115],["2021-07",1,2,1,1541161.0,671045,63836,121],["2021-07",1,2,2,1410341.0,648670,66553,112],["2021-07",1,2,3,1131607.0,513904,46956,91],["2021-07",1,2,4,1308078.0,592620,54275,104],["2021-07",1,2,5,1396052.0,592604,63357,113],["2021-07",1,3,0,1397958.0,614090,63215,114],["2021-07",1,3,1,1322569.0,564303,61514,103],["2021-07",1,3,2,1319587.0,563499,57843,107],["2021-07",1,3,3,1406179.0,675983,64497,118],["2021-07",1,3,4,1375812.0,628235,59470,111],["2021-07",1,3,5,1330102.0,584998,59514,109],["2021-07",1,4,0,1520262.0,664138,67065,120],["2021-07",1,4,1,1299865.0,620286,61304,108],["2021-07",1,4,2,1752424.0,779442,77992,141],["2021-07",1,4,3,1345577.0,639880,56856,110],["2021-07",1,4,4,1206894.0,514931,49862,97],["2021-07",1,4,5,1619691.0,658532,68165,123],["2021-07",2,0,0,1300246.0,578709,51764,103],["2021-07",2,0,1,1498935.0,685923,68343,123],["2021-07",2,0,2,1746415.0,727073,71240,137],["2021-07",2,0,3,1325264.0,570425,57454,106],["2021-07",2,0,4,1469007.0,627643,59452,114],["2021-07",2,0,5,1280312.0,589440,54236,107],["2021-07",2,1,0,1303173.0,566429,57006,107],["2021-07",2,1,1,1287307.0,547492,61461,102],["2021-07",2,1,2,1536777.0,646158,69986,124],["2021-07",2,1,3,1354706.0,608300,63918,115],["2021-07",2,1,4,1343767.0,541965,54668,106],["2021-07",2,1,5,1408803.0,578704,62949,114],["2021-07",2,2,0,1369225.0,585663,62600,109],["2021-07",2,2,1,1444953.0,628150,65097,113],["2021-07",2,2,2,1485129.0,636127,58361,115],["2021-07",2,2,3,1341321.0,594217,59411,110],["2021-07",2,2,4,1361923.0,584001,56090,104],["2021-07",2,2,5,1438924.0,641893,61127,119],["2021-07",2,3,0,1411982.0,609902,55672,110],["2021-07",2,3,1,1313767.0,609041,59943,108],["2021-07",2,3,2,1323646.0,582150,59404,109],["2021-07",2,3,3,1396897.0,601736,54372,112],["2021-07",2,3,4,1455696.0,674351,64526,121],["2021-07",2,3,5,1663944.0,732795,70351,130],["2021-07",2,4,0,1423514.0,632148,59084,109],["2021-07",2,4,1,1281549.0,559946,61382,106],["2021-07",2,4,2,1537416.0,645155,68699,123],["2021-07",2,4,3,1539225.0,620882,57771,114],["2021-07",2,4,4,1337865.0,579148,64663,106],["2021-07",2,4,5,1322473.0,574938,56211,104],["2021-07",3,0,0,1284525.0,530917,58596,101],["2021-07",3,0,1,1214005.0,526769,53885,96],["2021-07",3,0,2,1266153.0,569046,63703,108],["2021-07",3,0,3,1561366.0,726196,64703,121],["2021-07",3,0,4,1335561.0,577375,54406,107],["2021-07",3,0,5,1532710.0,694679,69932,126],["2021-07",3,1,0,1579579.0,696768,71249,131],["2021-07",3,1,1,1504878.0,588970,65235,118],["2021-07",3,1,2,1579757.0,636859,71265,123],["2021-07",3,1,3,1390934.0,573892,61431,111],["2021-07",3,1,4,1607041.0,643115,63593,122],["2021-07",3,1,5,1275132.0,529323,56317,103],["2021-07",3,2,0,1613146.0,692300,76251,130],["2021-07",3,2,1,1412775.0,601799,54603,107],["2021-07",3,2,2,1222554.0,559362,61128,104],["2021-07",3,2,3,1483844.0,687335,68442,128],["2021-07",3,2,4,1296204.0,591917,59753,105],["2021-07",3,2,5,1265150.0,584390,54291,99],["2021-07",3,3,0,1078845.0,486081,44450,87],["2021-07",3,3,1,1592239.0,653537,64103,120],["2021-07",3,3,2,1232118.0,524929,51898,99],["2021-07",3,3,3,1608679.0,664354,68851,124],["2021-07",3,3,4,1219939.0,566440,48132,95],["2021-07",3,3,5,1157279.0,521787,44778,92],["2021-07",3,4,0,1344443.0,620621,55415,108],["2021-07",3,4,1,1256933.0,514249,53100,103],["2021-07",3,4,2,1150334.0,479583,52053,96],["2021-07",3,4,3,1419342.0,665310,66329,118],["2021-07",3,4,4,1340693.0,604059,59411,110],["2021-07",3,4,5,1382364.0,624710,57937,112],["2021-07",4,0,0,1501818.0,664238,68896,122],["2021-07",4,0,1,1457282.0,630517,59516,115],["2021-07",4,0,2,1487342.0,651741,68756,118],["2021-07",4,0,3,1399357.0,623490,68418,115],["2021-07",4,0,4,1558036.0,779456,74097,133],["2021-07",4,0,5,1285287.0,561405,51609,101],["2021-07",4,1,0,1214384.0,525852,53501,100],["2021-07",4,1,1,1273110.0,513944,53786,96],["2021-07",4,1,2,1259897.0,602549,59231,105],["2021-07",4,1,3,1505395.0,646542,70139,124],["2021-07",4,1,4,1554043.0,684512,73965,124],["2021-07",4,1,5,1552201.0,742884,70288,128],["2021-07",4,2,0,1349183.0,573599,60506,105],["2021-07",4,2,1,1401828.0,569763,60417,110],["2021-07",4,2,2,1453863.0,604335,62238,109],["2021-07",4,2,3,1546387.0,619358,66239,120],["2021-07",4,2,4,1333174.0,598964,61494,108],["2021-07",4,2,5,1714002.0,766849,74855,134],["2021-07",4,3,0,1336965.0,638407,57998,112],["2021-07",4,3,1,1271233.0,594751,65375,112],["2021-07",4,3,2,1373243.0,579824,59824,114],["2021-07",4,3,3,1516075.0,680943,64977,117],["2021-07",4,3,4,1679843.0,686012,69311,129],["2021-07",4,3,5,1408302.0,647636,63561,112],["2021-07",4,4,0,1587929.0,734486,73302,127],["2021-07",4,4,1,1367599.0,610443,60297,108],["2021-07",4,4,2,1576640.0,696886,73227,129],["2021-07",4,4,3,1365600.0,608074,60700,112],["2021-07",4,4,4,1378256.0,608450,62829,113],["2021-07",4,4,5,1752580.0,752156,69820,140],["2021-08",0,0,0,1234822.0,500664,53899,97],["2021-08",0,0,1,1389296.0,597416,56268,112],["2021-08",0,0,2,1274595.0,530450,51971,100],["2021-08",0,0,3,1501162.0,636382,65296,119],["2021-08",0,0,4,1406499.0,626843,60160,113],["2021-08",0,0,5,1278528.0,585469,61646,103],["2021-08",0,1,0,1539438.0,671516,67863,124],["2021-08",0,1,1,1281716.0,567746,57318,101],["2021-08",0,1,2,1633951.0,702814,73226,129],["2021-08",0,1,3,1397372.0,595505,60629,109],["2021-08",0,1,4,1463168.0,641744,60227,113],["2021-08",0,1,5,1400083.0,636768,63588,113],["2021-08",0,2,0,1401679.0,668592,59064,117],["2021-08",0,2,1,1578671.0,669386,61464,122],["2021-08",0,2,2,1313226.0,584681,60162,108],["2021-08",0,2,3,1128897.0,542302,50478,94],["2021-08",0,2,4,1548022.0,647229,66533,122],["2021-08",0,2,5,1024495.0,424474,43724,82],["2021-08",0,3,0,1389555.0,649223,62816,114],["2021-08",0,3,1,1296456.0,553787,60180,107],["2021-08",0,3,2,1686298.0,737687,66974,125],["2021-08",0,3,3,1439613.0,660733,60589,117],["2021-08",0,3,4,1344767.0,607533,58198,114],["2021-08",0,3,5,1507819.0,695600,69635,122],["2021-08",0,4,0,1390024.0,524189,57056,106],["2021-08",0,4,1,1360760.0,562969,56034,106],["2021-08",0,4,2,1532627.0,716646,69804,123],["2021-08",0,4,3,1416809.0,563620,57827,103],["2021-08",0,4,4,1571272.0,687339,67158,126],["2021-08",0,4,5,1311919.0,605910,58053,108],["2021-08",1,0,0,1591364.0,597920,60525,115],["2021-08",1,0,1,1356420.0,562486,60008,106],["2021-08",1,0,2,1503514.0,673841,68050,120],["2021-08",1,0,3,1516541.0,640213,67877,122],["2021-08",1,0,4,1346322.0,618136,55021,106],["2021-08",1,0,5,1308041.0,602495,60424,108],["2021-08",1,1,0,1350887.0,662958,57305,115],["2021-08",1,1,1,1582536.0,704666,66354,126],["2021-08",1,1,2,1366426.0,617074,61018,109],["2021-08",1,1,3,1309375.0,562304,57646,106],["2021-08",1,1,4,1269077.0,582087,58852,108],["2021-08",1,1,5,1185404.0,558123,55745,101],["2021-08",1,2,0,1785064.0,751311,76402,138],["2021-08",1,2,1,1491016.0,663534,67124,117],["2021-08",1,2,2,1149653.0,516193,54399,97],["2021-08",1,2,3,1578444.0,670468,67190,120],["2021-08",1,2,4,1449795.0,665203,66339,117],["2021-08",1,2,5,1309194.0,656132,64180,113],["2021-08",1,3,0,1422981.0,669752,65473,121],["2021-08",1,3,1,1587614.0,690521,69663,128],["2021-08",1,3,2,1284296.0,565642,57886,99],["2021-08",1,3,3,1612515.0,770693,75969,130],["2021-08",1,3,4,1350730.0,616486,63817,109],["2021-08",1,3,5,1123318.0,506331,48358,92],["2021-08",1,4,0,1276439.0,558277,57249,103],["2021-08",1,4,1,1464671.0,662027,65878,118],["2021-08",1,4,2,1588261.0,691320,66026,125],["2021-08",1,4,3,1656661.0,702080,65904,130],["2021-08",1,4,4,1411134.0,606432,59308,115],["2021-08",1,4,5,1406671.0,586299,62105,112],["2021-08",2,0,0,1494531.0,627251,58591,117],["2021-08",2,0,1,1567718.0,722076,72324,128],["2021-08",2,0,2,1380708.0,639655,60132,113],["2021-08",2,0,3,1364530.0,595414,59840,113],["2021-08",2,0,4,1512342.0,685287,66626,119],["2021-08",2,0,5,1220364.0,528247,53194,98],["2021-08",2,1,0,1448106.0,651923,62271,117],["2021-08",2,1,1,1385460.0,604194,64274,109],["2021-08",2,1,2,1561350.0,712896,69228,124],["2021-08",2,1,3,1380027.0,565199,56869,105],["2021-08",2,1,4,1389580.0,652141,62941,112],["2021-08",2,1,5,1265143.0,564714,56000,100],["2021-08",2,2,0,1375120.0,581896,58108,104],["2021-08",2,2,1,1494235.0,586120,69416,121],["2021-08",2,2,2,1358344.0,585703,57429,103],["2021-08",2,2,3,1218127.0,498421,58354,99],["2021-08",2,2,4,1349735.0,599858,55891,105],["2021-08",2,2,5,1613064.0,707083,69801,125],["2021-08",2,3,0,1641915.0,704589,70037,125],["2021-08",2,3,1,1501604.0,613821,60680,117],["2021-08",2,3,2,1390061.0,599281,61329,113],["2021-08",2,3,3,1338859.0,594134,60190,106],["2021-08",2,3,4,1454034.0,650317,67124,120],["2021-08",2,3,5,1299008.0,590488,58526,104],["2021-08",2,4,0,1571729.0,655574,69815,126],["2021-08",2,4,1,1476732.0,653447,65382,122],["2021-08",2,4,2,1515364.0,614371,61025,116],["2021-08",2,4,3,1206153.0,516363,54037,98],["2021-08",2,4,4,1492568.0,628392,60307,117],["2021-08",2,4,5,1400809.0,579492,59588,112],["2021-08",3,0,0,1746257.0,764785,72851,137],["2021-08",3,0,1,1180476.0,470012,49956,92],["2021-08",3,0,2,1483315.0,684947,67232,119],["2021-08",3,0,3,1407162.0,642744,66978,119],["2021-08",3,0,4,1616302.0,716474,64183,125],["2021-08",3,0,5,1200114.0,536661,54662,96],["2021-08",3,1,0,1416892.0,620988,52584,107],["2021-08",3,1,1,1668507.0,678611,71450,124],["2021-08",3,1,2,1418184.0,629978,61378,112],["2021-08",3,1,3,1533396.0,621906,68288,119],["2021-08",3,1,4,1687127.0,780171,73194,132],["2021-08",3,1,5,1450670.0,607670,58139,113],["2021-08",3,2,0,1511136.0,675699,62705,113],["2021-08",3,2,1,1635416.0,748086,74834,135],["2021-08",3,2,2,1267373.0,560308,57956,106],["2021-08",3,2,3,1161277.0,494989,49301,92],["2021-08",3,2,4,1153984.0,519865,55030,99],["2021-08",3,2,5,1426238.0,595248,60159,112],["2021-08",3,3,0,1338296.0,579825,54391,102],["2021-08",3,3,1,1165647.0,531212,55433,99],["2021-08",3,3,2,1449996.0,668934,68436,115],["2021-08",3,3,3,1457382.0,620819,65750,114],["2021-08",3,3,4,1734655.0,757991,76058,137],["2021-08",3,3,5,1604320.0,702861,70764,125],["2021-08",3,4,0,1348324.0,639897,65409,117],["2021-08",3,4,1,1479475.0,730054,67683,123],["2021-08",3,4,2,1421461.0,651591,58797,112],["2021-08",3,4,3,1566296.0,730296,64819,123],["2021-08",3,4,4,1495433.0,621380,65841,119],["2021-08",3,4,5,1403636.0,588518,61182,110],["2021-08",4,0,0,1290287.0,633929,63470,108],["2021-08",4,0,1,1642879.0,683172,68795,126],["2021-08",4,0,2,1646631.0,692402,64053,122],["2021-08",4,0,3,1240231.0,535177,51705,94],["2021-08",4,0,4,1529687.0,678106,66679,122],["2021-08",4,0,5,1469992.0,626806,64015,117],["2021-08",4,1,0,1583316.0,593252,67015,121],["2021-08",4,1,1,1392724.0,594196,59671,105],["2021-08",4,1,2,1382949.0,625308,62524,111],["2021-08",4,1,3,1352017.0,576875,60560,104],["2021-08",4,1,4,1365430.0,585801,58097,108],["2021-08",4,1,5,1525877.0,654990,70878,119],["2021-08",4,2,0,1466207.0,629771,63615,117],["2021-08",4,2,1,1400091.0,609269,57447,108],["2021-08",4,2,2,1307855.0,541986,47690,101],["2021-08",4,2,3,1507261.0,643904,67497,121],["2021-08",4,2,4,1418273.0,681843,61953,118],["2021-08",4,2,5,1451448.0,600681,58066,111],["2021-08",4,3,0,1365286.0,633098,62069,116],["2021-08",4,3,1,1248564.0,598108,57242,100],["2021-08",4,3,2,1252063.0,561068,54336,104],["2021-08",4,3,3,1621336.0,768434,72917,130],["2021-08",4,3,4,1694316.0,708380,70930,131],["2021-08",4,3,5,1689141.0,758861,74256,133],["2021-08",4,4,0,1357882.0,656780,56824,106],["2021-08",4,4,1,1226503.0,569306,59272,101],["2021-08",4,4,2,1295696.0,585500,62798,106],["2021-08",4,4,3,1129957.0,492566,47519,91],["2021-08",4,4,4,1423018.0,641020,59156,109],["2021-08",4,4,5,1494567.0,633546,62456,117],["2021-09",0,0,0,1364542.0,588806,58107,106],["2021-09",0,0,1,1308665.0,542597,57098,106],["2021-09",0,0,2,1437879.0,623894,64331,114],["2021-09",0,0,3,1238293.0,558166,56357,95],["2021-09",0,0,4,1338708.0,532601,57675,105],["2021-09",0,0,5,1364878.0,667998,70238,119],["2021-09",0,1,0,1365846.0,573252,58978,108],["2021-09",0,1,1,1313965.0,520089,52662,103],["2021-09",0,1,2,1354638.0,597807,59604,110],["2021-09",0,1,3,1258777.0,524992,57416,100],["2021-09",0,1,4,1158058.0,550565,53692,94],["2021-09",0,1,5,1352826.0,575390,52686,105],["2021-09",0,2,0,1304884.0,548228,54965,100],["2021-09",0,2,1,1331061.0,605550,56615,107],["2021-09",0,2,2,1374463.0,605980,57222,108],["2021-09",0,2,3,1546545.0,632471,66259,117],["2021-09",0,2,4,1364962.0,564285,63437,110],["2021-09",0,2,5,1450990.0,627124,60401,111],["2021-09",0,3,0,1452962.0,575387,65320,112],["2021-09",0,3,1,1357076.0,612711,62562,111],["2021-09",0,3,2,1522894.0,675338,65076,120],["2021-09",0,3,3,1483028.0,574976,57048,114],["2021-09",0,3,4,1327471.0,546209,64217,109],["2021-09",0,3,5,1309759.0,570002,61081,108],["2021-09",0,4,0,1430968.0,585036,61479,106],["2021-09",0,4,1,1357915.0,690039,64205,115],["2021-09",0,4,2,1428836.0,629302,61422,113],["2021-09",0,4,3,1187879.0,578601,54796,103],["2021-09",0,4,4,1428858.0,572700,63763,117],["2021-09",0,4,5,1364460.0,566646,60586,109],["2021-09",1,0,0,1357483.0,572163,58928,107],["2021-09",1,0,1,1343661.0,603388,57660,103],["2021-09",1,0,2,1503493.0,686572,72134,124],["2021-09",1,0,3,1508021.0,673153,66091,124],["2021-09",1,0,4,1445892.0,609579,60409,112],["2021-09",1,0,5,1484068.0,619723,68102,118],["2021-09",1,1,0,1174904.0,521139,52028,96],["2021-09",1,1,1,1363512.0,618968,60947,112],["2021-09",1,1,2,1403170.0,654204,58646,111],["2021-09",1,1,3,1768439.0,692667,72147,133],["2021-09",1,1,4,1287513.0,605631,59344,106],["2021-09",1,1,5,1256285.0,575845,55806,99],["2021-09",1,2,0,1158746.0,555889,45298,88],["2021-09",1,2,1,1317355.0,622584,61936,109],["2021-09",1,2,2,1528543.0,597857,65807,119],["2021-09",1,2,3,1552100.0,669950,69167,124],["2021-09",1,2,4,1389887.0,613279,63882,117],["2021-09",1,2,5,1336100.0,613497,57745,105],["2021-09",1,3,0,1269188.0,589239,63515,101],["2021-09",1,3,1,1562651.0,664042,69168,125],["2021-09",1,3,2,1176774.0,501867,45837,91],["2021-09",1,3,3,1403222.0,573426,56772,108],["2021-09",1,3,4,1274875.0,602973,58213,110],["2021-09",1,3,5,1433296.0,629011,66438,120],["2021-09",1,4,0,1477057.0,709172,68856,121],["2021-09",1,4,1,1792714.0,690561,70061,127],["2021-09",1,4,2,1472872.0,611994,59888,111],["2021-09",1,4,3,1487020.0,625218,62906,115],["2021-09",1,4,4,1308316.0,603026,63497,105],["2021-09",1,4,5,1367581.0,600072,57288,108],["2021-09",2,0,0,1563228.0,680221,69556,121],["2021-09",2,0,1,1485597.0,630620,69774,118],["2021-09",2,0,2,1412845.0,623825,60862,114],["2021-09",2,0,3,1481653.0,680179,69401,125],["2021-09",2,0,4,1656854.0,697944,63383,123],["2021-09",2,0,5,1080105.0,499859,48677,88],["2021-09",2,1,0,1275365.0,529251,55145,102],["2021-09",2,1,1,1387960.0,574092,61881,107],["2021-09",2,1,2,1603573.0,701609,70666,126],["2021-09",2,1,3,1415339.0,652191,61186,117],["2021-09",2,1,4,1239389.0,506672,54198,96],["2021-09",2,1,5,1371474.0,591225,54133,108],["2021-09",2,2,0,1263434.0,557508,54295,104],["2021-09",2,2,1,1225941.0,524029,57750,101],["2021-09",2,2,2,1222077.0,525590,55369,93],["2021-09",2,2,3,1478502.0,616851,63750,117],["2021-09",2,2,4,1554832.0,672039,63386,123],["2021-09",2,2,5,1341347.0,615068,59437,106],["2021-09",2,3,0,1383040.0,676121,63753,113],["2021-09",2,3,1,1166635.0,517763,48692,94],["2021-09",2,3,2,1299117.0,566166,54436,110],["2021-09",2,3,3,1453740.0,651546,65948,120],["2021-09",2,3,4,1507797.0,705332,67472,119],["2021-09",2,3,5,1504314.0,617527,64130,116],["2021-09",2,4,0,1607236.0,669679,69381,121],["2021-09",2,4,1,1238611.0,574342,55012,99],["2021-09",2,4,2,1679302.0,754260,73670,133],["2021-09",2,4,3,1321216.0,595668,58216,105],["2021-09",2,4,4,1355013.0,541784,55457,104],["2021-09",2,4,5,1298361.0,615693,58659,108],["2021-09",3,0,0,1352781.0,609663,58806,111],["2021-09",3,0,1,1056128.0,503182,51472,87],["2021-09",3,0,2,1415507.0,629947,58053,112],["2021-09",3,0,3,1295073.0,558881,55359,105],["2021-09",3,0,4,1245173.0,546203,54479,101],["2021-09",3,0,5,1233906.0,474776,52185,96],["2021-09",3,1,0,1215187.0,552841,53467,100],["2021-09",3,1,1,1226244.0,558721,51091,99],["2021-09",3,1,2,1696910.0,725302,74852,133],["2021-09",3,1,3,1101944.0,504045,48894,89],["2021-09",3,1,4,1049604.0,516522,51663,88],["2021-09",3,1,5,1407457.0,641179,62660,112],["2021-09",3,2,0,1854242.0,799849,80299,144],["2021-09",3,2,1,1518736.0,684188,67207,122],["2021-09",3,2,2,1254548.0,568844,55991,102],["2021-09",3,2,3,1160691.0,595327,54449,99],["2021-09",3,2,4,1314482.0,588308,54391,103],["2021-09",3,2,5,1353895.0,604814,64018,114],["2021-09",3,3,0,1346520.0,587043,57693,105],["2021-09",3,3,1,1679034.0,714239,66689,124],["2021-09",3,3,2,1388019.0,664303,57971,110],["2021-09",3,3,3,1478956.0,647407,59593,116],["2021-09",3,3,4,1339774.0,581176,62351,109],["2021-09",3,3,5,1567388.0,663808,68055,124],["2021-09",3,4,0,1388567.0,622059,63403,114],["2021-09",3,4,1,1375723.0,691423,60285,110],["2021-09",3,4,2,1554739.0,654981,62399,116],["2021-09",3,4,3,1268234.0,557858,58557,104],["2021-09",3,4,4,1436993.0,643309,62619,116],["2021-09",3,4,5,1481056.0,672044,65437,118],["2021-09",4,0,0,1392072.0,553809,63380,108],["2021-09",4,0,1,1258681.0,523584,53680,100],["2021-09",4,0,2,1427880.0,599692,65292,109],["2021-09",4,0,3,1391637.0,586303,57378,110],["2021-09",4,0,4,1250154.0,639045,61055,108],["2021-09",4,0,5,1214467.0,564580,51671,100],["2021-09",4,1,0,1374761.0,666089,65446,116],["2021-09",4,1,1,1444406.0,664278,63289,117],["2021-09",4,1,2,1481989.0,575438,64775,112],["2021-09",4,1,3,1142241.0,523077,50626,94],["2021-09",4,1,4,1341052.0,567589,60320,104],["2021-09",4,1,5,1328223.0,589753,62830,113],["2021-09",4,2,0,1470733.0,651047,67874,119],["2021-09",4,2,1,1263734.0,568885,54236,102],["2021-09",4,2,2,1318407.0,600268,61647,105],["2021-09",4,2,3,1222991.0,478945,51584,98],["2021-09",4,2,4,1445764.0,708640,63871,120],["2021-09",4,2,5,1250798.0,557315,57174,100],["2021-09",4,3,0,1220851.0,579956,61486,106],["2021-09",4,3,1,1505490.0,662822,61415,118],["2021-09",4,3,2,1376360.0,595631,59566,109],["2021-09",4,3,3,1273501.0,500488,54643,93],["2021-09",4,3,4,1164190.0,604385,54211,95],["2021-09",4,3,5,1562620.0,688910,75814,128],["2021-09",4,4,0,1189437.0,517212,52688,94],["2021-09",4,4,1,1409681.0,621651,61962,112],["2021-09",4,4,2,1149805.0,510754,53131,91],["2021-09",4,4,3,1494543.0,666894,70379,120],["2021-09",4,4,4,1555941.0,689887,59504,118],["2021-09",4,4,5,1333259.0,551048,58526,103],["2021-10",0,0,0,1389956.0,628647,58876,112],["2021-10",0,0,1,1579211.0,674967,62787,119],["2021-10",0,0,2,1600023.0,653526,68440,121],["2021-10",0,0,3,1717877.0,763465,75571,137],["2021-10",0,0,4,1266837.0,566531,57041,103],["2021-10",0,0,5,1406478.0,677814,62790,116],["2021-10",0,1,0,1318786.0,555643,58403,107],["2021-10",0,1,1,1431879.0,573399,63981,111],["2021-10",0,1,2,1288063.0,611293,57710,106],["2021-10",0,1,3,1411685.0,603626,66452,112],["2021-10",0,1,4,1416721.0,572007,63146,111],["2021-10",0,1,5,1295544.0,571536,62855,110],["2021-10",0,2,0,1271974.0,557020,54393,103],["2021-10",0,2,1,1593290.0,629955,65221,122],["2021-10",0,2,2,1123184.0,486511,47650,88],["2021-10",0,2,3,1434678.0,643099,64392,115],["2021-10",0,2,4,1405767.0,572594,56594,109],["2021-10",0,2,5,1385800.0,595222,58745,106],["2021-10",0,3,0,1432985.0,617475,67490,115],["2021-10",0,3,1,1209864.0,586361,54798,100],["2021-10",0,3,2,1399695.0,648811,61645,110],["2021-10",0,3,3,1479150.0,620138,67323,119],["2021-10",0,3,4,1232291.0,547505,59912,101],["2021-10",0,3,5,1381333.0,583825,57402,111],["2021-10",0,4,0,1261399.0,577212,54789,101],["2021-10",0,4,1,1277798.0,552807,56983,102],["2021-10",0,4,2,1443006.0,662132,64096,114],["2021-10",0,4,3,1255083.0,539923,60785,107],["2021-10",0,4,4,1539665.0,619570,65280,123],["2021-10",0,4,5,1518640.0,613874,66268,118],["2021-10",1,0,0,1359856.0,619902,56545,109],["2021-10",1,0,1,1420170.0,592919,66345,109],["2021-10",1,0,2,1259588.0,571747,63800,105],["2021-10",1,0,3,1470294.0,664656,66460,121],["2021-10",1,0,4,1306692.0,609096,61563,108],["2021-10",1,0,5,1455642.0,641574,70377,117],["2021-10",1,1,0,1343611.0,582016,60999,105],["2021-10",1,1,1,1306011.0,579039,58564,113],["2021-10",1,1,2,1304819.0,629999,57535,105],["2021-10",1,1,3,1408198.0,601268,60277,112],["2021-10",1,1,4,1504365.0,611051,62470,112],["2021-10",1,1,5,1335381.0,662466,59620,112],["2021-10",1,2,0,1442682.0,663015,64730,119],["2021-10",1,2,1,1425658.0,636180,62189,112],["2021-10",1,2,2,1349427.0,614173,65008,114],["2021-10",1,2,3,1422300.0,560992,59231,112],["2021-10",1,2,4,1414217.0,617536,62781,114],["2021-10",1,2,5,1566583.0,685487,63310,121],["2021-10",1,3,0,1334606.0,610027,65620,117],["2021-10",1,3,1,1583407.0,702758,68622,127],["2021-10",1,3,2,1551357.0,728240,67162,123],["2021-10",1,3,3,1223668.0,519972,52441,100],["2021-10",1,3,4,1558045.0,718742,77257,129],["2021-10",1,3,5,1435581.0,638060,66013,119],["2021-10",1,4,0,1313747.0,566249,54827,103],["2021-10",1,4,1,1668498.0,746337,81505,134],["2021-10",1,4,2,1549111.0,676541,67301,123],["2021-10",1,4,3,1263729.0,572440,57096,105],["2021-10",1,4,4,1317817.0,578674,53634,103],["2021-10",1,4,5,1534415.0,677213,66920,121],["2021-10",2,0,0,1283465.0,599464,58430,104],["2021-10",2,0,1,1265588.0,550267,56509,104],["2021-10",2,0,2,1672062.0,704660,73591,130],["2021-10",2,0,3,1511617.0,671080,65030,123],["2021-10",2,0,4,1622912.0,761251,72462,135],["2021-10",2,0,5,1662058.0,721739,75279,135],["2021-10",2,1,0,1349488.0,590909,58501,107],["2021-10",2,1,1,1555675.0,692884,70116,125],["2021-10",2,1,2,1422439.0,686296,61586,112],["2021-10",2,1,3,1414797.0,614314,57309,110],["2021-10",2,1,4,1553311.0,672981,66165,123],["2021-10",2,1,5,1498663.0,659768,71585,117],["2021-10",2,2,0,1384605.0,570173,60830,111],["2021-10",2,2,1,1199183.0,537272,53116,95],["2021-10",2,2,2,1462225.0,641138,62064,117],["2021-10",2,2,3,1625700.0,726258,72786,132],["2021-10",2,2,4,1452437.0,639310,68624,116],["2021-10",2,2,5,1359413.0,620122,64014,113],["2021-10",2,3,0,1451838.0,597938,64312,110],["2021-10",2,3,1,1345980.0,613150,65330,109],["2021-10",2,3,2,1354954.0,570500,52372,102],["2021-10",2,3,3,1538024.0,607124,65109,120],["2021-10",2,3,4,1545996.0,692812,72344,123],["2021-10",2,3,5,1512354.0,646379,67695,119],["2021-10",2,4,0,1596457.0,673158,66405,123],["2021-10",2,4,1,1285936.0,569140,57904,104],["2021-10",2,4,2,1357543.0,649692,63720,112],["2021-10",2,4,3,1450640.0,642350,64601,115],["2021-10",2,4,4,1583533.0,615510,73737,121],["2021-10",2,4,5,1398910.0,623623,62070,112],["2021-10",3,0,0,1310924.0,554829,56462,102],["2021-10",3,0,1,1507061.0,715886,67401,123],["2021-10",3,0,2,1563870.0,607871,65204,122],["2021-10",3,0,3,1349761.0,617769,56172,102],["2021-10",3,0,4,1175500.0,570007,57091,96],["2021-10",3,0,5,1644355.0,667640,67317,123],["2021-10",3,1,0,1210912.0,582158,59968,107],["2021-10",3,1,1,1446900.0,587094,66577,119],["2021-10",3,1,2,1307647.0,603706,58266,108],["2021-10",3,1,3,1407941.0,621058,57809,110],["2021-10",3,1,4,1310939.0,595480,61805,111],["2021-10",3,1,5,1497429.0,706540,65943,125],["2021-10",3,2,0,1569949.0,720236,69273,128],["2021-10",3,2,1,1403679.0,646522,56088,114],["2021-10",3,2,2,1550546.0,670999,70563,129],["2021-10",3,2,3,1380293.0,585651,59987,110],["2021-10",3,2,4,1434185.0,612289,54936,112],["2021-10",3,2,5,1373108.0,627218,65681,113],["2021-10",3,3,0,1434696.0,630835,59050,114],["2021-10",3,3,1,1317177.0,564484,59332,105],["2021-10",3,3,2,1632927.0,733367,71684,130],["2021-10",3,3,3,1268632.0,520598,52637,101],["2021-10",3,3,4,1454800.0,690469,69054,121],["2021-10",3,3,5,1452554.0,570290,59884,111],["2021-10",3,4,0,1678543.0,717973,68980,130],["2021-10",3,4,1,1248996.0,532982,52547,95],["2021-10",3,4,2,1557634.0,615464,63836,121],["2021-10",3,4,3,1229621.0,576718,56386,101],["2021-10",3,4,4,1396539.0,642297,62083,109],["2021-10",3,4,5,1437493.0,556319,61688,112],["2021-10",4,0,0,1458815.0,602489,62302,113],["2021-10",4,0,1,1317967.0,546874,57987,104],["2021-10",4,0,2,1273494.0,551087,58023,104],["2021-10",4,0,3,1446989.0,645944,62588,120],["2021-10",4,0,4,1309376.0,577534,55260,104],["2021-10",4,0,5,1559367.0,757270,65679,125],["2021-10",4,1,0,1363186.0,656111,61005,110],["2021-10",4,1,1,1448113.0,592879,62633,115],["2021-10",4,1,2,1121595.0,485025,52334,92],["2021-10",4,1,3,1659675.0,745097,64472,127],["2021-10",4,1,4,1419545.0,577605,66033,112],["2021-10",4,1,5,1366726.0,671780,66154,114],["2021-10",4,2,0,1225969.0,562611,54737,98],["2021-10",4,2,1,1333743.0,641139,61747,112],["2021-10",4,2,2,1394319.0,635641,63921,112],["2021-10",4,2,3,1578987.0,626466,64519,120],["2021-10",4,2,4,1564563.0,690620,70492,125],["2021-10",4,2,5,1208464.0,515702,51524,94],["2021-10",4,3,0,1599856.0,675191,67602,120],["2021-10",4,3,1,1242334.0,531644,54236,100],["2021-10",4,3,2,1516761.0,676286,65245,120],["2021-10",4,3,3,1318475.0,542784,53762,101],["2021-10",4,3,4,1475156.0,630316,57604,115],["2021-10",4,3,5,1420634.0,563459,60847,110],["2021-10",4,4,0,1523214.0,601526,66505,118],["2021-10",4,4,1,1457263.0,672072,65026,115],["2021-10",4,4,2,1503471.0,669105,67384,120],["2021-10",4,4,3,1510950.0,675388,70818,124],["2021-10",4,4,4,1469414.0,641955,65279,117],["2021-10",4,4,5,1150936.0,511541,49796,91],["2021-11",0,0,0,1240287.0,532411,54189,98],["2021-11",0,0,1,1122316.0,487975,51621,93],["2021-11",0,0,2,1347928.0,517637,60707,106],["2021-11",0,0,3,1296490.0,557097,59295,102],["2021-11",0,0,4,1586495.0,702935,64461,125],["2021-11",0,0,5,1422765.0,636733,70367,118],["2021-11",0,1,0,1279265.0,582205,55836,102],["2021-11",0,1,1,1216178.0,504579,53966,95],["2021-11",0,1,2,1350261.0,600533,57161,108],["2021-11",0,1,3,1351300.0,635900,63385,110],["2021-11",0,1,4,1476072.0,681352,63274,115],["2021-11",0,1,5,1291835.0,549966,57060,104],["2021-11",0,2,0,1314503.0,580915,60111,107],["2021-11",0,2,1,1367239.0,667212,57132,108],["2021-11",0,2,2,885789.0,424168,39287,73],["2021-11",0,2,3,1141922.0,478569,44983,87],["2021-11",0,2,4,1325273.0,623173,55531,108],["2021-11",0,2,5,1491931.0,624103,63157,120],["2021-11",0,3,0,1489124.0,644010,66434,120],["2021-11",0,3,1,1404451.0,638379,57685,111],["2021-11",0,3,2,1332534.0,572411,61455,106],["2021-11",0,3,3,1720677.0,707004,73428,132],["2021-11",0,3,4,1367638.0,606714,56206,108],["2021-11",0,3,5,1598144.0,660448,64970,125],["2021-11",0,4,0,1418903.0,644137,63163,112],["2021-11",0,4,1,1349255.0,604608,59554,114],["2021-11",0,4,2,1641563.0,731504,76834,132],["2021-11",0,4,3,1135650.0,522847,47013,93],["2021-11",0,4,4,1406849.0,636255,63924,115],["2021-11",0,4,5,1294163.0,633568,62476,109],["2021-11",1,0,0,1479086.0,684388,64835,118],["2021-11",1,0,1,1400380.0,590934,60895,112],["2021-11",1,0,2,1436593.0,576669,63681,111],["2021-11",1,0,3,1508781.0,672391,65695,120],["2021-11",1,0,4,1438951.0,671372,64589,115],["2021-11",1,0,5,1430871.0,701066,64440,119],["2021-11",1,1,0,1450633.0,597788,59842,113],["2021-11",1,1,1,1256889.0,484080,56896,99],["2021-11",1,1,2,1372326.0,579507,65191,110],["2021-11",1,1,3,1201939.0,572225,61925,103],["2021-11",1,1,4,1691751.0,773432,81645,136],["2021-11",1,1,5,1244850.0,539020,52335,101],["2021-11",1,2,0,1297767.0,532364,53400,100],["2021-11",1,2,1,1391325.0,612533,58917,113],["2021-11",1,2,2,1173081.0,535226,48212,95],["2021-11",1,2,3,1314452.0,542515,49927,102],["2021-11",1,2,4,1470204.0,637931,62705,116],["2021-11",1,2,5,1534954.0,664931,62571,113],["2021-11",1,3,0,1381736.0,641910,63170,115],["2021-11",1,3,1,1272439.0,554479,59250,109],["2021-11",1,3,2,1626490.0,660032,70320,126],["2021-11",1,3,3,1326152.0,622019,58770,108],["2021-11",1,3,4,1543234.0,659651,74956,129],["2021-11",1,3,5,1275265.0,514898,58343,103],["2021-11",1,4,0,1353978.0,585270,62977,108],["2021-11",1,4,1,1333758.0,528927,60356,107],["2021-11",1,4,2,1491147.0,678926,70440,123],["2021-11",1,4,3,1209163.0,560014,53727,101],["2021-11",1,4,4,1239108.0,529974,59450,101],["2021-11",1,4,5,1338178.0,654889,61113,111],["2021-11",2,0,0,1384809.0,553513,65211,108],["2021-11",2,0,1,1003817.0,462519,44789,85],["2021-11",2,0,2,1322607.0,592991,58435,108],["2021-11",2,0,3,1256339.0,555412,55961,100],["2021-11",2,0,4,1230382.0,525958,54287,100],["2021-11",2,0,5,1298860.0,576689,61203,103],["2021-11",2,1,0,1326089.0,603511,58348,109],["2021-11",2,1,1,1375113.0,607279,61652,114],["2021-11",2,1,2,1453313.0,669456,61398,117],["2021-11",2,1,3,1363304.0,621303,59351,108],["2021-11",2,1,4,1248003.0,526023,55703,98],["2021-11",2,1,5,1430892.0,615872,60034,115],["2021-11",2,2,0,1521643.0,657811,65567,122],["2021-11",2,2,1,1333107.0,598323,58941,109],["2021-11",2,2,2,1313121.0,532977,59014,100],["2021-11",2,2,3,1412843.0,618860,58062,111],["2021-11",2,2,4,1392584.0,622555,68368,114],["2021-11",2,2,5,1188585.0,521281,55088,97],["2021-11",2,3,0,1355002.0,527421,56090,102],["2021-11",2,3,1,1018292.0,459523,44613,84],["2021-11",2,3,2,1353891.0,637358,58512,106],["2021-11",2,3,3,1472729.0,653592,62997,119],["2021-11",2,3,4,1377854.0,626280,61394,110],["2021-11",2,3,5,1210645.0,490410,53007,96],["2021-11",2,4,0,1316290.0,590968,60728,108],["2021-11",2,4,1,1477230.0,689841,65525,124],["2021-11",2,4,2,1232804.0,475238,50673,90],["2021-11",2,4,3,1420040.0,640552,63600,115],["2021-11",2,4,4,1292894.0,514866,56394,105],["2021-11",2,4,5,1431218.0,609189,65412,112],["2021-11",3,0,0,1424546.0,646632,58006,114],["2021-11",3,0,1,1522083.0,689069,60806,119],["2021-11",3,0,2,1285546.0,562357,52531,101],["2021-11",3,0,3,1478428.0,637207,64219,116],["2021-11",3,0,4,1379393.0,643481,69898,115],["2021-11",3,0,5,1335145.0,569866,55830,107],["2021-11",3,1,0,1518576.0,676354,63785,120],["2021-11",3,1,1,1393377.0,645471,58742,111],["2021-11",3,1,2,1460838.0,656479,66019,118],["2021-11",3,1,3,1379138.0,590989,63168,112],["2021-11",3,1,4,1221133.0,478417,53338,96],["2021-11",3,1,5,1412224.0,646806,62992,115],["2021-11",3,2,0,1402009.0,612398,63234,107],["2021-11",3,2,1,1506636.0,678671,66399,123],["2021-11",3,2,2,1534133.0,684046,64057,124],["2021-11",3,2,3,1348575.0,607567,60791,108],["2021-11",3,2,4,1310970.0,609303,53378,104],["2021-11",3,2,5,1487484.0,707943,65978,119],["2021-11",3,3,0,1494760.0,738835,65296,120],["2021-11",3,3,1,1276794.0,607218,53551,104],["2021-11",3,3,2,1372319.0,604580,61231,113],["2021-11",3,3,3,1002211.0,470047,46913,81],["2021-11",3,3,4,1213216.0,551622,50575,98],["2021-11",3,3,5,1543174.0,660401,62144,120],["2021-11",3,4,0,1496437.0,655523,62849,116],["2021-11",3,4,1,1331024.0,549047,58942,107],["2021-11",3,4,2,1675227.0,748612,72352,127],["2021-11",3,4,3,1474561.0,639863,61213,118],["2021-11",3,4,4,1501822.0,678950,64588,118],["2021-11",3,4,5,1346091.0,591065,58511,105],["2021-11",4,0,0,1459755.0,679584,66090,126],["2021-11",4,0,1,1436637.0,617643,61256,109],["2021-11",4,0,2,1209375.0,586969,50708,97],["2021-11",4,0,3,1430461.0,628640,60827,112],["2021-11",4,0,4,1308528.0,610473,54977,103],["2021-11",4,0,5,1466618.0,681501,65930,121],["2021-11",4,1,0,1332098.0,573744,62138,108],["2021-11",4,1,1,1293969.0,531180,52234,99],["2021-11",4,1,2,1497130.0,635578,67341,114],["2021-11",4,1,3,1324542.0,571245,59467,104],["2021-11",4,1,4,1283489.0,535846,56247,98],["2021-11",4,1,5,1226452.0,584083,55612,102],["2021-11",4,2,0,1170123.0,574197,52552,96],["2021-11",4,2,1,1189868.0,483058,48208,92],["2021-11",4,2,2,1373512.0,592121,57955,107],["2021-11",4,2,3,1588073.0,696443,66062,129],["2021-11",4,2,4,1546316.0,722798,72312,123],["2021-11",4,2,5,1312905.0,538744,56663,102],["2021-11",4,3,0,1709891.0,764081,72650,137],["2021-11",4,3,1,1382459.0,572627,62214,108],["2021-11",4,3,2,1234586.0,548060,51261,97],["2021-11",4,3,3,1278179.0,545613,55303,97],["2021-11",4,3,4,1337789.0,597791,62636,108],["2021-11",4,3,5,1429665.0,591360,60459,110],["2021-11",4,4,0,1508143.0,678284,68177,121],["2021-11",4,4,1,1412258.0,577852,58603,113],["2021-11",4,4,2,1309551.0,576472,62529,113],["2021-11",4,4,3,1291704.0,618029,58417,106],["2021-11",4,4,4,1622680.0,761694,71366,131],["2021-11",4,4,5,1443531.0,693869,62636,119],["2021-12",0,0,0,1489217.0,650704,68079,120],["2021-12",0,0,1,1192702.0,605804,56932,102],["2021-12",0,0,2,1246906.0,584647,52509,100],["2021-12",0,0,3,1551130.0,652671,64383,117],["2021-12",0,0,4,1390046.0,524428,58266,103],["2021-12",0,0,5,1560712.0,705205,64047,120],["2021-12",0,1,0,1556251.0,644807,67915,125],["2021-12",0,1,1,1436713.0,646070,64482,113],["2021-12",0,1,2,1456008.0,651574,61270,118],["2021-12",0,1,3,1359472.0,586155,56993,108],["2021-12",0,1,4,1423829.0,577236,63094,112],["2021-12",0,1,5,1488824.0,651117,66157,117],["2021-12",0,2,0,1495147.0,636769,62317,115],["2021-12",0,2,1,1506828.0,670600,64954,118],["2021-12",0,2,2,1444112.0,628893,61946,114],["2021-12",0,2,3,1437658.0,653590,57395,113],["2021-12",0,2,4,1181118.0,534766,49786,100],["2021-12",0,2,5,1447144.0,559013,63294,119],["2021-12",0,3,0,1563712.0,645586,68861,122],["2021-12",0,3,1,1374220.0,636708,58926,112],["2021-12",0,3,2,1603701.0,695025,67314,127],["2021-12",0,3,3,1344621.0,577487,60700,109],["2021-12",0,3,4,1396093.0,635933,63876,115],["2021-12",0,3,5,1242048.0,611813,58472,104],["2021-12",0,4,0,1379893.0,573790,57579,109],["2021-12",0,4,1,1088034.0,515048,49570,90],["2021-12",0,4,2,1484273.0,650127,64280,121],["2021-12",0,4,3,1184056.0,559153,55694,99],["2021-12",0,4,4,1624175.0,766718,71368,125],["2021-12",0,4,5,1395495.0,648246,61903,115],["2021-12",1,0,0,1455182.0,658110,66795,118],["2021-12",1,0,1,1387371.0,558108,56386,107],["2021-12",1,0,2,1338765.0,569977,54465,104],["2021-12",1,0,3,1151910.0,532813,57556,97],["2021-12",1,0,4,1415906.0,628068,58132,111],["2021-12",1,0,5,1290746.0,560286,56458,106],["2021-12",1,1,0,1371329.0,611928,58708,113],["2021-12",1,1,1,1545969.0,615352,61166,112],["2021-12",1,1,2,1596452.0,701167,74731,131],["2021-12",1,1,3,1477507.0,652012,65168,122],["2021-12",1,1,4,1286237.0,555098,58582,106],["2021-12",1,1,5,1388811.0,601028,62168,112],["2021-12",1,2,0,1264370.0,574066,54151,104],["2021-12",1,2,1,1481431.0,616291,68278,115],["2021-12",1,2,2,1359627.0,642650,59725,110],["2021-12",1,2,3,1534173.0,675134,63463,117],["2021-12",1,2,4,1379102.0,610489,60856,109],["2021-12",1,2,5,1379387.0,655629,66073,116],["2021-12",1,3,0,1436358.0,626260,57767,111],["2021-12",1,3,1,1263198.0,570969,54251,101],["2021-12",1,3,2,1452689.0,642107,62957,118],["2021-12",1,3,3,1334808.0,550463,60443,105],["2021-12",1,3,4,1273142.0,539842,58406,95],["2021-12",1,3,5,1237547.0,596222,55821,100],["2021-12",1,4,0,1333534.0,627954,64813,110],["2021-12",1,4,1,1306904.0,581650,56733,104],["2021-12",1,4,2,1164414.0,535970,52297,94],["2021-12",1,4,3,1325273.0,634629,63967,110],["2021-12",1,4,4,1357689.0,597581,57596,108],["2021-12",1,4,5,1461239.0,732097,70775,126],["2021-12",2,0,0,1384110.0,627612,63662,109],["2021-12",2,0,1,1449860.0,658646,64480,117],["2021-12",2,0,2,1500429.0,690246,64327,124],["2021-12",2,0,3,1396999.0,603537,62322,107],["2021-12",2,0,4,1671285.0,712510,70124,135],["2021-12",2,0,5,1450616.0,637515,58433,112],["2021-12",2,1,0,1465466.0,643006,61844,117],["2021-12",2,1,1,1442698.0,612690,61178,112],["2021-12",2,1,2,1327225.0,547890,53557,105],["2021-12",2,1,3,1589609.0,639263,66531,123],["2021-12",2,1,4,1331838.0,562592,55270,103],["2021-12",2,1,5,1430787.0,694094,63369,121],["2021-12",2,2,0,1294250.0,612132,59855,107],["2021-12",2,2,1,1485408.0,576249,59664,112],["2021-12",2,2,2,1332335.0,593531,59286,107],["2021-12",2,2,3,1486130.0,640986,60391,113],["2021-12",2,2,4,1496425.0,667921,73214,124],["2021-12",2,2,5,1505575.0,633310,68951,116],["2021-12",2,3,0,1508746.0,660678,64538,121],["2021-12",2,3,1,1315446.0,580501,58547,103],["2021-12",2,3,2,1564053.0,650496,65582,117],["2021-12",2,3,3,1411790.0,625208,60070,110],["2021-12",2,3,4,1439181.0,661334,65447,115],["2021-12",2,3,5,1390662.0,609406,54229,106],["2021-12",2,4,0,1261789.0,519193,55538,102],["2021-12",2,4,1,1383285.0,585801,53721,103],["2021-12",2,4,2,1566863.0,634260,60079,119],["2021-12",2,4,3,1405798.0,536007,59335,108],["2021-12",2,4,4,1463565.0,615972,63109,119],["2021-12",2,4,5,1329493.0,547280,56540,105],["2021-12",3,0,0,1502825.0,634783,70645,125],["2021-12",3,0,1,1404952.0,638089,63172,115],["2021-12",3,0,2,1505288.0,699428,60496,117],["2021-12",3,0,3,1603539.0,725551,68381,131],["2021-12",3,0,4,1555297.0,678460,75932,127],["2021-12",3,0,5,1558543.0,674393,65268,125],["2021-12",3,1,0,1790043.0,766188,78266,136],["2021-12",3,1,1,1494706.0,646322,64716,120],["2021-12",3,1,2,1671258.0,729527,69427,129],["2021-12",3,1,3,1373973.0,582854,58041,106],["2021-12",3,1,4,1533379.0,669146,71223,121],["2021-12",3,1,5,1459044.0,609195,57597,110],["2021-12",3,2,0,1226865.0,511046,52684,100],["2021-12",3,2,1,1340022.0,652974,66238,115],["2021-12",3,2,2,1264809.0,579795,60769,107],["2021-12",3,2,3,1245384.0,601636,59397,103],["2021-12",3,2,4,1327279.0,564686,56283,109],["2021-12",3,2,5,1231326.0,522424,51124,96],["2021-12",3,3,0,1255822.0,560373,53326,99],["2021-12",3,3,1,1378639.0,551996,57193,105],["2021-12",3,3,2,1340010.0,583220,58622,104],["2021-12",3,3,3,1492959.0,670405,61336,119],["2021-12",3,3,4,1199037.0,549891,55878,99],["2021-12",3,3,5,1463550.0,615087,64861,114],["2021-12",3,4,0,1528256.0,651904,67052,121],["2021-12",3,4,1,1499957.0,659385,67592,120],["2021-12",3,4,2,1389223.0,563941,61491,110],["2021-12",3,4,3,1238990.0,497129,48822,96],["2021-12",3,4,4,1245241.0,575364,55972,102],["2021-12",3,4,5,1702767.0,703535,68524,126],["2021-12",4,0,0,1473558.0,635388,67551,117],["2021-12",4,0,1,1652264.0,782584,73652,138],["2021-12",4,0,2,1452355.0,650471,61076,118],["2021-12",4,0,3,1523825.0,632199,65226,119],["2021-12",4,0,4,1487525.0,644769,65375,121],["2021-12",4,0,5,1425760.0,622363,59673,114],["2021-12",4,1,0,1447648.0,682937,70350,121],["2021-12",4,1,1,1513094.0,651729,72885,123],["2021-12",4,1,2,1484972.0,642411,68405,123],["2021-12",4,1,3,1342005.0,589108,55255,103],["2021-12",4,1,4,1282992.0,626261,59857,108],["2021-12",4,1,5,1278655.0,566826,57475,105],["2021-12",4,2,0,1508482.0,679586,70262,124],["2021-12",4,2,1,1493868.0,685708,62876,118],["2021-12",4,2,2,1414809.0,640287,58869,111],["2021-12",4,2,3,1268255.0,608427,55235,108],["2021-12",4,2,4,1340717.0,591476,62655,113],["2021-12",4,2,5,1569729.0,702903,67520,127],["2021-12",4,3,0,1497559.0,714224,66013,125],["2021-12",4,3,1,1257325.0,602038,58855,104],["2021-12",4,3,2,1356331.0,596433,63404,109],["2021-12",4,3,3,1263080.0,542296,61458,105],["2021-12",4,3,4,1406581.0,539998,58418,106],["2021-12",4,3,5,1424407.0,656417,61850,114],["2021-12",4,4,0,1358715.0,666750,60856,113],["2021-12",4,4,1,1619969.0,669826,68139,127],["2021-12",4,4,2,1682713.0,753933,72223,132],["2021-12",4,4,3,1398839.0,587360,56390,108],["2021-12",4,4,4,1407442.0,672878,65051,117],["2021-12",4,4,5,1543028.0,685283,68568,124]]}};
 
   // ---------- Formatting ----------
-  const usd = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const usdCompact = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", notation: "compact", maximumFractionDigits: 2 });
+  const usd = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2, minimumFractionDigits: 2 });
+  const usd0 = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+  const compactUsd = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", notation: "compact", maximumFractionDigits: 1 });
+  const compact = new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 });
   const num = new Intl.NumberFormat("en-US");
-  const numCompact = new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 });
-  const money = v => v == null ? "–" : (Math.abs(v) >= 1e6 ? usdCompact.format(v) : usd.format(v));
-  const pct = v => v == null ? "–" : (v * 100).toFixed(v * 100 < 0.1 ? 3 : 2) + "%";
-  const div = (a, b) => (b == null || b === 0 || a == null) ? null : a / b;
-  const signedMoney = v => (v > 0 ? "+" : v < 0 ? "−" : "") + money(Math.abs(v));
+  const millions = v => "$" + (v / 1e6).toLocaleString("en-US", { maximumFractionDigits: 1, minimumFractionDigits: 1 }) + "M";
+  const pct = (v, d = 1) => v == null || !isFinite(v) ? "–" : (v * 100).toFixed(d) + "%";
+  const signedPct = (v, d = 1) => v == null || !isFinite(v) ? "–" : (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v * 100).toFixed(d) + "%";
+  const div = (a, b) => (!b || a == null) ? null : a / b;
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
   const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   const monthLabel = m => /^\d{4}-\d{2}$/.test(m) ? MONTHS[+m.slice(5) - 1] + " " + m.slice(0, 4) : (m === "UNDATED" ? "Undated" : m);
-  const fmtStamp = iso => {
-    const d = new Date(iso);
-    if (isNaN(d)) return iso;
-    return d.toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "UTC" }) + " UTC";
-  };
+  const stamp = iso => { const d = new Date(iso); return isNaN(d) ? iso : d.toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "UTC" }) + " UTC"; };
 
-  // ---------- Load the latest export, fall back to the snapshot ----------
+  function expand(d) {
+    if (d.breakdowns) return d;
+    const c = d.breakdowns_compact;
+    d.breakdowns = c.rows.map(r => ({ month: r[0], market: c.markets[r[1]], client: c.clients[r[2]], media_channel: c.channels[r[3]], spend: r[4], impressions: r[5], clicks: r[6], campaigns: r[7] }));
+    return d;
+  }
+
   fetch("data/dashboard.json", { cache: "no-store" })
-    .then(r => r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status)))
+    .then(r => r.ok ? r.json() : Promise.reject())
     .then(d => init(d, false))
-    .catch(() => init(SNAPSHOT, true));
+    .catch(() => init(expand(SNAPSHOT), true));
 
   function init(DATA, isSnapshot) {
-    const status = document.getElementById("refresh");
+    const B = (DATA.breakdowns || []).filter(r => r.market && r.market !== "Unassigned");
     document.getElementById("refresh-text").textContent = isSnapshot
-      ? "Showing a saved snapshot from " + fmtStamp(DATA.generated_at) + ". The live export couldn’t be loaded."
-      : "Live data from the latest pipeline run, refreshed " + fmtStamp(DATA.generated_at) + ".";
-    if (isSnapshot) status.classList.add("stale");
+      ? "Saved snapshot from " + stamp(DATA.generated_at) + " (live export unavailable)"
+      : "Live data, refreshed " + stamp(DATA.generated_at);
+    if (isSnapshot) document.getElementById("info").classList.add("stale");
 
-    const PREFERRED = ["daily_campaign_platform", "social_platform", "multichannel_platform"];
-    const PLATFORMS = {};
-    DATA.platforms.forEach(p => { PLATFORMS[p.platform] = p; });
-    const ORDER = Object.keys(PLATFORMS).sort((a, b) =>
-      (PREFERRED.indexOf(a) + 1 || 99) - (PREFERRED.indexOf(b) + 1 || 99));
-    const nameOf = k => (PLATFORMS[k] && PLATFORMS[k].name) || k;
+    const months = [...new Set(B.map(r => r.month))].sort();
+    const year = months.length ? months[0].slice(0, 4) : "";
+    const markets = [...new Set(B.map(r => r.market))].sort();
+    const clients = [...new Set(B.map(r => r.client))].sort();
+    const channels = [...new Set(B.map(r => r.media_channel))].sort();
+    const CH_COLORS = ["var(--c1)", "var(--c2)", "var(--c3)", "var(--c4)", "var(--c5)", "var(--c6)"];
 
-    // KPI logic: ratios from totals; incomplete-day spend excluded from cost ratios;
-    // CPA spend only from platforms that report conversions.
-    function kpis(keys) {
-      const t = { spend: 0, sc: 0, imp: 0, clk: 0, conv: 0, cpaSpend: 0, hasConv: false };
-      keys.forEach(k => {
-        const p = PLATFORMS[k];
-        t.spend += +p.spend || 0; t.sc += +p.spend_complete || 0; t.imp += +p.impressions || 0; t.clk += +p.clicks || 0;
-        if (p.conversions != null) { t.conv += +p.conversions; t.cpaSpend += +p.spend_complete || 0; t.hasConv = true; }
-      });
-      return {
-        spend: t.spend, impressions: t.imp, clicks: t.clk, conversions: t.hasConv ? t.conv : null,
-        ctr: div(t.clk, t.imp), cpc: div(t.sc, t.clk), cpm: t.imp ? t.sc / t.imp * 1000 : null,
-        cpa: t.hasConv ? div(t.cpaSpend, t.conv) : null
-      };
-    }
-
-    let current = "all";
-    const seg = document.getElementById("platform-seg");
-    seg.innerHTML = "";
-    [["all", "All platforms"]].concat(ORDER.map(k => [k, nameOf(k)])).forEach(([k, label]) => {
-      const b = document.createElement("button");
-      b.type = "button"; b.textContent = label; b.dataset.key = k;
-      b.addEventListener("click", () => { current = k; render(); });
-      seg.appendChild(b);
-    });
-
-    const CAVEATS = {
-      all: "Totals blend unrelated datasets, and multichannel’s volume dominates them. Pick a platform to see its own figures.",
-      daily_campaign_platform: "Cost ratios exclude days where spend was recorded without any performance data.",
-      social_platform: "Social has no dates, so it appears in totals but not in trends.",
-      multichannel_platform: "Multichannel is a fictional dataset; its CPM is far above real advertising prices, so treat it as engineering practice, not business insight."
+    const qMonths = q => months.filter(m => Math.ceil(+m.slice(5) / 3) === q);
+    const PERIODS = {
+      FY: { label: year, months: months, cmp: { cur: months.filter(m => +m.slice(5) > 6), prev: months.filter(m => +m.slice(5) <= 6), label: "H2 vs H1" } },
+      H1: { label: "H1", months: months.filter(m => +m.slice(5) <= 6), cmp: null },
+      H2: { label: "H2", months: months.filter(m => +m.slice(5) > 6), cmp: { cur: months.filter(m => +m.slice(5) > 6), prev: months.filter(m => +m.slice(5) <= 6), label: "vs H1" } }
     };
+    [1, 2, 3, 4].forEach(q => { PERIODS["Q" + q] = { label: "Q" + q, months: qMonths(q), cmp: q > 1 ? { cur: qMonths(q), prev: qMonths(q - 1), label: "vs Q" + (q - 1) } : null }; });
 
+    const state = { period: "FY", markets: new Set(), unit: "pct", dailyMetric: "spend", view: "trends" };
+
+    const inMarkets = r => !state.markets.size || state.markets.has(r.market);
+    const sel = (monthList) => { const s = new Set(monthList); return B.filter(r => s.has(r.month) && inMarkets(r)); };
+    const totals = rows => rows.reduce((t, r) => { t.spend += r.spend; t.impressions += r.impressions; t.clicks += r.clicks; t.campaigns += r.campaigns; return t; }, { spend: 0, impressions: 0, clicks: 0, campaigns: 0 });
+    const groupSum = (rows, key) => { const g = {}; rows.forEach(r => { const k = typeof key === "function" ? key(r) : r[key]; (g[k] = g[k] || { spend: 0, impressions: 0, clicks: 0, campaigns: 0 }); g[k].spend += r.spend; g[k].impressions += r.impressions; g[k].clicks += r.clicks; g[k].campaigns += r.campaigns; }); return g; };
+
+    // ---------- Filters ----------
+    function renderChips() {
+      const mc = document.getElementById("market-chips");
+      mc.innerHTML = `<button type="button" class="chip" data-mk="__all" aria-pressed="${!state.markets.size}">All markets</button>` +
+        markets.map(m => `<button type="button" class="chip" data-mk="${esc(m)}" aria-pressed="${state.markets.has(m)}">${esc(m)}</button>`).join("");
+      mc.querySelectorAll("button").forEach(b => b.onclick = () => {
+        const k = b.dataset.mk;
+        if (k === "__all") state.markets.clear(); else state.markets.has(k) ? state.markets.delete(k) : state.markets.add(k);
+        if (state.markets.size === markets.length) state.markets.clear();
+        renderAll();
+      });
+      const pc = document.getElementById("period-chips");
+      pc.innerHTML = Object.entries(PERIODS).map(([k, p]) => `<button type="button" class="chip plain" data-p="${k}" aria-pressed="${state.period === k}">${esc(p.label)}</button>`).join("");
+      pc.querySelectorAll("button").forEach(b => b.onclick = () => { state.period = b.dataset.p; renderAll(); });
+    }
+
+    // ---------- KPI strip ----------
     function renderKpis() {
-      const k = kpis(current === "all" ? ORDER : [current]);
-      const cards = [
-        ["Total spend", money(k.spend), "All spend, including incomplete days"],
-        ["Impressions", numCompact.format(k.impressions), "Times ads were shown"],
-        ["Clicks", numCompact.format(k.clicks), "Times ads were clicked"],
-        ["Conversions", k.conversions == null ? "Not reported" : num.format(k.conversions), k.conversions == null ? "This source has no conversion data" : "Purchases or sign-ups"],
-        ["CTR", pct(k.ctr), "Clicks ÷ impressions"],
-        ["CPC", k.cpc == null ? "–" : usd.format(k.cpc), "Spend ÷ clicks"],
-        ["CPM", k.cpm == null ? "–" : usd.format(k.cpm), "Spend per 1,000 impressions"],
-        ["CPA", k.cpa == null ? "Not available" : usd.format(k.cpa), current === "all" ? "Only platforms that report conversions" : "Spend ÷ conversions"]
-      ];
-      document.getElementById("kpis").innerHTML = cards.map(([n, v, h]) =>
-        `<div class="kpi"><div class="name">${n}</div><div class="val">${v}</div><div class="hint">${h}</div></div>`).join("");
-      document.getElementById("kpi-caveat").textContent = CAVEATS[current] || "";
-      document.getElementById("platform-body").innerHTML = ORDER.map(key => {
-        const r = kpis([key]);
-        const dim = current !== "all" && current !== key ? ' class="dim"' : "";
-        return `<tr${dim}><td>${esc(nameOf(key))}</td><td>${money(r.spend)}</td><td>${num.format(r.impressions)}</td><td>${num.format(r.clicks)}</td>
-          <td>${pct(r.ctr)}</td><td>${r.cpc == null ? "–" : usd.format(r.cpc)}</td><td>${r.cpm == null ? "–" : usd.format(r.cpm)}</td><td>${r.cpa == null ? "–" : usd.format(r.cpa)}</td></tr>`;
+      const P = PERIODS[state.period];
+      const t = totals(sel(P.months));
+      let c = null, p = null;
+      if (P.cmp) { c = totals(sel(P.cmp.cur)); p = totals(sel(P.cmp.prev)); }
+      const chg = (a, b) => (b ? a / b - 1 : null);
+      const ctr = div(t.clicks, t.impressions), cpc = div(t.spend, t.clicks);
+      const delta = (val, good) => {
+        if (val == null) return `<div class="d">${P.cmp ? "–" : "No earlier period in the data"}</div>`;
+        const cls = val === 0 ? "" : ((val > 0) === good ? "up" : "down");
+        return `<div class="d"><span class="${cls}">${signedPct(val)}</span> ${esc(P.cmp.label)}</div>`;
+      };
+      const ctrDelta = () => {
+        if (!P.cmp) return `<div class="d">No earlier period in the data</div>`;
+        const d = (div(c.clicks, c.impressions) - div(p.clicks, p.impressions)) * 100;
+        return `<div class="d"><span class="${d >= 0 ? "up" : "down"}">${d >= 0 ? "+" : "−"}${Math.abs(d).toFixed(2)} pts</span> ${esc(P.cmp.label)}</div>`;
+      };
+      document.getElementById("kpis").innerHTML = [
+        ["Spend", millions(t.spend), P.cmp ? delta(chg(c.spend, p.spend), true) : delta(null)],
+        ["Impressions", compact.format(t.impressions), P.cmp ? delta(chg(c.impressions, p.impressions), true) : delta(null)],
+        ["Clicks", compact.format(t.clicks), P.cmp ? delta(chg(c.clicks, p.clicks), true) : delta(null)],
+        ["CTR", pct(ctr, 2), ctrDelta()],
+        ["CPC", cpc == null ? "–" : usd.format(cpc), P.cmp ? delta(chg(div(c.spend, c.clicks), div(p.spend, p.clicks)), false) : delta(null)]
+      ].map(([k, v, d]) => `<div class="kpi"><div class="k">${k}</div><div class="v">${v}</div>${d}</div>`).join("");
+    }
+
+    // ---------- Treemap (squarified) ----------
+    function squarify(items, rect) {
+      const out = []; let row = []; let r = { ...rect }; const rest = items.slice();
+      const worst = (rw, side) => { const s = rw.reduce((a, b) => a + b.a, 0); const mx = Math.max(...rw.map(x => x.a)), mn = Math.min(...rw.map(x => x.a)); return Math.max(side * side * mx / (s * s), (s * s) / (side * side * mn)); };
+      const place = (rw) => {
+        const s = rw.reduce((a, b) => a + b.a, 0);
+        if (r.w >= r.h) { const w = s / r.h; let y = r.y; rw.forEach(it => { const h = it.a / w; out.push({ ...it, x: r.x, y, w, h }); y += h; }); r = { x: r.x + w, y: r.y, w: r.w - w, h: r.h }; }
+        else { const h = s / r.w; let x = r.x; rw.forEach(it => { const w = it.a / h; out.push({ ...it, x, y: r.y, w, h }); x += w; }); r = { x: r.x, y: r.y + h, w: r.w, h: r.h - h }; }
+      };
+      while (rest.length) { const side = Math.min(r.w, r.h); if (!row.length || worst(row.concat(rest[0]), side) <= worst(row, side)) row.push(rest.shift()); else { place(row); row = []; } }
+      if (row.length) place(row);
+      return out;
+    }
+    function renderTreemap() {
+      const P = PERIODS[state.period];
+      const s = new Set(P.months);
+      const g = groupSum(B.filter(r => s.has(r.month)), "market");
+      const total = Object.values(g).reduce((a, b) => a + b.spend, 0) || 1;
+      const W = 500, H = 135;
+      const items = Object.entries(g).sort((a, b) => b[1].spend - a[1].spend).map(([m, v]) => ({ m, v: v.spend, a: v.spend / total * W * H }));
+      const tones = ["var(--blue-2)", "var(--blue-3)", "var(--blue-3)", "var(--blue-4)", "var(--blue-4)", "var(--blue-4)"];
+      document.getElementById("treemap").innerHTML = squarify(items, { x: 0, y: 0, w: W, h: H }).map((t, i) =>
+        `<button type="button" class="tile ${state.markets.size && !state.markets.has(t.m) ? "faded" : ""}" data-mk="${esc(t.m)}" aria-pressed="${state.markets.has(t.m)}"
+          style="left:${t.x / W * 100}%;top:${t.y / H * 100}%;width:${t.w / W * 100}%;height:${t.h / H * 100}%;background:${tones[Math.min(i, tones.length - 1)]}">
+          <span class="t-name">${esc(t.m)}</span><span class="t-val">${pct(t.v / total)}<br>${millions(t.v)}</span></button>`).join("");
+      document.querySelectorAll("#treemap .tile").forEach(b => b.onclick = () => {
+        const k = b.dataset.mk; state.markets.has(k) ? state.markets.delete(k) : state.markets.add(k);
+        if (state.markets.size === markets.length) state.markets.clear();
+        renderAll();
+      });
+    }
+
+    // ---------- Month combo chart ----------
+    function renderMonthChart() {
+      const P = PERIODS[state.period], active = new Set(P.months);
+      const g = groupSum(B.filter(inMarkets), "month");
+      const vals = months.map(m => (g[m] || {}).spend || 0);
+      const mom = vals.map((v, i) => i ? (vals[i - 1] ? v / vals[i - 1] - 1 : null) : null);
+      const W = 620, H = 260, L = 50, R = 40, T = 22, Bm = 26;
+      const max = Math.max(...vals) * 1.12 || 1;
+      const lim = Math.max(0.05, ...mom.filter(v => v != null).map(Math.abs)) * 1.25;
+      const bw = (W - L - R) / months.length;
+      const y = v => T + (H - T - Bm) * (1 - v / max);
+      const yl = v => T + (H - T - Bm) * (0.5 - v / (2 * lim));
+      let g2 = "";
+      for (let i = 0; i <= 4; i++) { const v = max * i / 4; g2 += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${L - 6}" y="${y(v) + 3}" text-anchor="end">${compactUsd.format(v)}</text>`; }
+      months.forEach((m, i) => {
+        const x = L + i * bw;
+        g2 += `<rect x="${x + bw * 0.15}" y="${y(vals[i])}" width="${bw * 0.7}" height="${H - Bm - y(vals[i])}" rx="2" fill="${active.has(m) ? "var(--blue-2)" : "var(--grey-bar)"}"><title>${monthLabel(m)}: ${usd0.format(vals[i])}</title></rect>`;
+        g2 += `<text x="${x + bw / 2}" y="${H - 8}" text-anchor="middle">${MONTHS[+m.slice(5) - 1]}</text>`;
+      });
+      let d = "";
+      mom.forEach((v, i) => { if (v == null) return; d += (d ? "L" : "M") + (L + i * bw + bw / 2) + " " + yl(v) + " "; });
+      g2 += `<path d="${d}" fill="none" stroke="var(--ink)" stroke-width="1.4"/>`;
+      mom.forEach((v, i) => { if (v == null) return; const cx = L + i * bw + bw / 2, cy = yl(v);
+        g2 += `<circle cx="${cx}" cy="${cy}" r="3" fill="var(--ink)"><title>${monthLabel(months[i])}: ${signedPct(v)} vs previous month</title></circle><text class="lbl" x="${cx}" y="${cy - 7}" text-anchor="middle">${signedPct(v, 0)}</text>`; });
+      document.getElementById("month-chart").innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Total spend by month with change versus previous month">${g2}</svg>`;
+    }
+
+    // ---------- Market summary table ----------
+    function renderMarketTable() {
+      const P = PERIODS[state.period];
+      const cur = groupSum(sel(P.months), "market");
+      const prevG = P.cmp ? groupSum(sel(P.cmp.prev), "market") : null;
+      const curC = P.cmp ? groupSum(sel(P.cmp.cur), "market") : null;
+      const tot = Object.values(cur).reduce((a, b) => a + b.spend, 0);
+      const rowsH = Object.entries(cur).sort((a, b) => b[1].spend - a[1].spend).map(([m, v]) => {
+        const ch = P.cmp ? div(curC[m] && curC[m].spend, prevG[m] && prevG[m].spend) : null;
+        return `<tr><td>${esc(m)}</td><td>${millions(v.spend)}</td><td>${pct(v.spend / tot)}</td><td>${compact.format(v.clicks)}</td><td>${pct(div(v.clicks, v.impressions), 2)}</td><td>${usd.format(div(v.spend, v.clicks))}</td>
+          <td class="${ch == null ? "" : (ch >= 1 ? "up" : "down")}">${ch == null ? "–" : signedPct(ch - 1)}</td></tr>`;
       }).join("");
+      const T = totals(sel(P.months));
+      const tc = P.cmp ? div(totals(sel(P.cmp.cur)).spend, totals(sel(P.cmp.prev)).spend) : null;
+      document.getElementById("market-table").innerHTML =
+        `<thead><tr><th>Market</th><th>Spend</th><th>Share</th><th>Clicks</th><th>CTR</th><th>CPC</th><th>${P.cmp ? esc(P.cmp.label) : "Change"}</th></tr></thead><tbody>${rowsH}</tbody>
+         <tfoot><tr><td>Total</td><td>${millions(T.spend)}</td><td>100.0%</td><td>${compact.format(T.clicks)}</td><td>${pct(div(T.clicks, T.impressions), 2)}</td><td>${usd.format(div(T.spend, T.clicks))}</td><td>${tc == null ? "–" : signedPct(tc - 1)}</td></tr></tfoot>`;
     }
 
-    // ---------- Charts ----------
-    const COLORS = ["var(--signal)", "var(--test)", "var(--ok)", "var(--warn)"];
-    function lineChart(series, yFmt, xLabels, label) {
-      const W = 560, H = 230, L = 52, R = 12, T = 10, B = 28;
-      const vals = series.flatMap(s => s.values.filter(v => v != null));
-      const max = (Math.max(...vals) || 1) * 1.08;
-      const x = i => L + i * (W - L - R) / Math.max(xLabels.length - 1, 1);
-      const y = v => T + (H - T - B) * (1 - v / max);
-      let g = "";
-      for (let i = 0; i <= 4; i++) {
-        const v = max * i / 4, yy = y(v);
-        g += `<line x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}" stroke="var(--rule)"/><text x="${L - 8}" y="${yy + 4}" text-anchor="end">${yFmt(v)}</text>`;
+    // ---------- Cross tables with heat shading ----------
+    function heat(v, max, min = 0) { const a = max > min ? Math.min((v - min) / (max - min), 1) * 0.85 + 0.15 : 0.5; return `background: color-mix(in srgb, var(--blue-2) ${Math.round(a * 70)}%, transparent)`; }
+    function crossTable(id, rowKey, rowLabel) {
+      const P = PERIODS[state.period];
+      const rows = sel(P.months);
+      const g = {};
+      rows.forEach(r => { const a = r[rowKey], b = r.media_channel; g[a] = g[a] || {}; g[a][b] = (g[a][b] || 0) + r.spend; });
+      const keys = Object.keys(g).sort();
+      const cells = keys.map(k => { const t = channels.reduce((s, c) => s + (g[k][c] || 0), 0); return { k, t, v: channels.map(c => g[k][c] || 0) }; });
+      const shown = cells.map(r => r.v.map(v => state.unit === "pct" ? v / r.t : v));
+      const max = Math.max(...shown.flat()), min = Math.min(...shown.flat());
+      const fmt = v => state.unit === "pct" ? pct(v) : millions(v);
+      const body = cells.map((r, i) => `<tr><td>${esc(r.k)}</td>${shown[i].map(v => `<td style="${heat(v, max, min)}">${fmt(v)}</td>`).join("")}<td>${millions(r.t)}</td></tr>`).join("");
+      const colT = channels.map((c, j) => cells.reduce((s, r) => s + r.v[j], 0)); const grand = colT.reduce((a, b) => a + b, 0);
+      document.getElementById(id).innerHTML = `<thead><tr><th>${rowLabel}</th>${channels.map(c => `<th>${esc(c)}</th>`).join("")}<th>Total</th></tr></thead><tbody>${body}</tbody>
+        <tfoot><tr><td>Total</td>${colT.map(v => `<td>${state.unit === "pct" ? pct(v / grand) : millions(v)}</td>`).join("")}<td>${millions(grand)}</td></tr></tfoot>`;
+      return state.unit === "pct" ? "Each row shows how that " + rowLabel.toLowerCase() + "’s spend splits across channels." : "Spend by channel, in millions of dollars.";
+    }
+
+    function renderClients() {
+      document.getElementById("client-hint").textContent = crossTable("client-channel", "client", "Client");
+      const P = PERIODS[state.period];
+      const cur = groupSum(sel(P.months), "client");
+      const tot = Object.values(cur).reduce((a, b) => a + b.spend, 0);
+      document.getElementById("client-table").innerHTML = `<thead><tr><th>Client</th><th>Spend</th><th>Share</th><th>Campaigns</th><th>CTR</th><th>CPC</th></tr></thead><tbody>` +
+        Object.entries(cur).sort((a, b) => b[1].spend - a[1].spend).map(([k, v]) =>
+          `<tr><td>${esc(k)}</td><td>${millions(v.spend)}</td><td>${pct(v.spend / tot)}</td><td>${num.format(v.campaigns)}</td><td>${pct(div(v.clicks, v.impressions), 2)}</td><td>${usd.format(div(v.spend, v.clicks))}</td></tr>`).join("") + `</tbody>`;
+    }
+
+    function renderMedia() {
+      document.getElementById("mc-hint").textContent = crossTable("market-channel", "market", "Market");
+      const P = PERIODS[state.period];
+      const cmp = P.cmp;
+      document.getElementById("change-title").textContent = cmp ? "Change by media channel, " + cmp.label : "Change by media channel";
+      if (!cmp) {
+        document.getElementById("change-hint").textContent = "Pick H2, Q2, Q3, Q4 or the full year to compare with an earlier period.";
+        document.getElementById("change-table").innerHTML = "";
+      } else {
+        document.getElementById("change-hint").textContent = "Spend change per market and channel. Green is growth, red is decline.";
+        const g = (list) => { const o = {}; sel(list).forEach(r => { const k = r.market + "|" + r.media_channel; o[k] = (o[k] || 0) + r.spend; }); return o; };
+        const c = g(cmp.cur), p = g(cmp.prev);
+        const ms = [...new Set(sel(cmp.cur).map(r => r.market))].sort();
+        const cell = v => { if (v == null) return `<td>–</td>`; const a = Math.min(Math.abs(v) / 0.2, 1); const col = v >= 0 ? "var(--green-bg)" : "var(--red-bg)";
+          return `<td style="background: color-mix(in srgb, ${col} ${Math.round(40 + a * 60)}%, transparent)">${signedPct(v, 0)}</td>`; };
+        document.getElementById("change-table").innerHTML = `<thead><tr><th>Market</th>${channels.map(ch => `<th>${esc(ch)}</th>`).join("")}</tr></thead><tbody>` +
+          ms.map(m => `<tr><td>${esc(m)}</td>${channels.map(ch => cell(p[m + "|" + ch] ? c[m + "|" + ch] / p[m + "|" + ch] - 1 : null)).join("")}</tr>`).join("") + `</tbody>`;
       }
-      const step = Math.max(1, Math.round(xLabels.length / 6));
-      xLabels.forEach((l, i) => { if (i % step === 0) g += `<text x="${x(i)}" y="${H - 8}" text-anchor="middle">${esc(l)}</text>`; });
-      series.forEach(s => {
-        let d = "", pen = false;
-        s.values.forEach((v, i) => { if (v == null) { pen = false; return; } d += (pen ? "L" : "M") + x(i) + " " + y(v) + " "; pen = true; });
-        g += `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2.2" stroke-linejoin="round"/>`;
-      });
-      g += `<line class="cursor" x1="0" x2="0" y1="${T}" y2="${H - B}" stroke="var(--muted)" stroke-dasharray="3 3" style="display:none"/>`;
-      return { svg: `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(label)}">${g}</svg>`, x, L, R, W, n: xLabels.length };
+      const g = groupSum(sel(P.months), "media_channel");
+      const tot = Object.values(g).reduce((a, b) => a + b.spend, 0);
+      const ordered = Object.entries(g).sort((a, b) => b[1].spend - a[1].spend);
+      const top = ordered.length ? ordered[0][1].spend / tot : 1;
+      document.getElementById("channel-bars").innerHTML = ordered.map(([k, v]) =>
+        `<div class="hbar"><span>${esc(k)}</span><div class="track"><div class="fill" style="width:${(v.spend / tot) / top * 100}%;background:${CH_COLORS[channels.indexOf(k) % CH_COLORS.length]}"></div></div><span class="pct">${pct(v.spend / tot)}</span></div>`).join("") +
+        `<p class="note">Shares are close to equal because the multichannel dataset is synthetic; real channel mixes are far less even.</p>`;
+      const cg = P.cmp ? groupSum(sel(P.cmp.cur), "media_channel") : null, pg = P.cmp ? groupSum(sel(P.cmp.prev), "media_channel") : null;
+      document.getElementById("channel-table").innerHTML = `<thead><tr><th>Channel</th><th>Spend</th><th>Clicks</th><th>CTR</th><th>CPC</th><th>${P.cmp ? esc(P.cmp.label) : "Change"}</th></tr></thead><tbody>` +
+        ordered.map(([k, v]) => { const ch = P.cmp && pg[k] ? cg[k].spend / pg[k].spend - 1 : null;
+          return `<tr><td>${esc(k)}</td><td>${millions(v.spend)}</td><td>${compact.format(v.clicks)}</td><td>${pct(div(v.clicks, v.impressions), 2)}</td><td>${usd.format(div(v.spend, v.clicks))}</td><td class="${ch == null ? "" : ch >= 0 ? "up" : "down"}">${ch == null ? "–" : signedPct(ch)}</td></tr>`; }).join("") + `</tbody>`;
     }
 
-    function barChart(values, labels, yFmt, label, highlight, tipFmt) {
-      const W = 560, H = 230, L = 52, R = 12, T = 10, B = 28;
-      const max = (Math.max(...values) || 1) * 1.08;
-      const bw = (W - L - R) / values.length;
-      const y = v => T + (H - T - B) * (1 - v / max);
-      let g = "";
-      for (let i = 0; i <= 4; i++) {
-        const v = max * i / 4, yy = y(v);
-        g += `<line x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}" stroke="var(--rule)"/><text x="${L - 8}" y="${yy + 4}" text-anchor="end">${yFmt(v)}</text>`;
-      }
-      values.forEach((v, i) => {
-        const xx = L + i * bw + bw * 0.18, yy = y(v);
-        g += `<rect x="${xx}" y="${yy}" width="${bw * 0.64}" height="${H - B - yy}" rx="2" fill="${highlight(i) || "var(--signal)"}"><title>${esc(tipFmt(i, v))}</title></rect>`;
-        g += `<text x="${L + i * bw + bw / 2}" y="${H - 8}" text-anchor="middle">${esc(labels[i])}</text>`;
-      });
-      return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(label)}">${g}</svg>`;
+    // ---------- Platforms & Trust ----------
+    const PL = {}; (DATA.platforms || []).forEach(p => PL[p.platform] = p);
+    const nameOf = k => (PL[k] && PL[k].name) || k;
+    function renderPlatforms() {
+      const order = ["daily_campaign_platform", "social_platform", "multichannel_platform"].filter(k => PL[k]).concat(Object.keys(PL).filter(k => !["daily_campaign_platform", "social_platform", "multichannel_platform"].includes(k)));
+      const row = (label, ps) => {
+        const t = ps.reduce((a, p) => { a.s += p.spend; a.sc += p.spend_complete; a.i += p.impressions; a.c += p.clicks; if (p.conversions != null) { a.cv += p.conversions; a.cs += p.spend_complete; a.h = true; } return a; }, { s: 0, sc: 0, i: 0, c: 0, cv: 0, cs: 0, h: false });
+        return `<td>${label}</td><td>${t.s >= 1e6 ? millions(t.s) : usd.format(t.s)}</td><td>${num.format(t.i)}</td><td>${num.format(t.c)}</td><td>${t.h ? num.format(t.cv) : "–"}</td><td>${pct(div(t.c, t.i), t.c / t.i < 0.001 ? 3 : 2)}</td><td>${usd.format(div(t.sc, t.c))}</td><td>${usd.format(t.sc / t.i * 1000)}</td><td>${t.h ? usd.format(t.cs / t.cv) : "–"}</td>`;
+      };
+      document.getElementById("platform-table").innerHTML = `<thead><tr><th>Platform</th><th>Spend</th><th>Impressions</th><th>Clicks</th><th>Conversions</th><th>CTR</th><th>CPC</th><th>CPM</th><th>CPA</th></tr></thead><tbody>` +
+        order.map(k => `<tr>${row(esc(nameOf(k)), [PL[k]])}</tr>`).join("") + `</tbody><tfoot><tr>${row("All platforms", order.map(k => PL[k]))}</tr></tfoot>`;
     }
 
-    let dailyMetric = "spend";
-    function dailyPanel() {
+    function renderDaily() {
       const rows = DATA.daily || [];
       const dates = [...new Set(rows.map(r => r.date))].sort();
-      const campaigns = [...new Set(rows.map(r => r.campaign))].sort();
-      if (!dates.length) return null;
-      const byKey = {};
-      rows.forEach(r => { byKey[r.campaign + "|" + r.date] = r; });
-      const value = r => !r ? null : (dailyMetric === "spend" ? r.spend : (r.impressions ? r.clicks / r.impressions : null));
-      const series = campaigns.map((c, i) => ({ name: c, color: COLORS[i % COLORS.length], values: dates.map(d => value(byKey[c + "|" + d])) }));
-      const labels = dates.map(d => +d.slice(8) + " " + MONTHS[+d.slice(5, 7) - 1]);
-      const period = MONTHS[+dates[0].slice(5, 7) - 1] + " " + dates[0].slice(0, 4);
-      const fmt = dailyMetric === "spend" ? (v => "$" + numCompact.format(v)) : (v => (v * 100).toFixed(0) + "%");
-      const c = lineChart(series, fmt, labels, "Daily " + dailyMetric + " by campaign, " + period);
-      const gaps = rows.filter(r => r.impressions == null).map(r => +r.date.slice(8) + " " + MONTHS[+r.date.slice(5, 7) - 1]);
-      const panel = document.createElement("div");
-      panel.className = "panel";
-      panel.innerHTML = `
-        <div class="panel-head">
-          <div><h3>Daily Campaign, ${period}</h3><p class="note">The only source with genuine day-by-day delivery.${gaps.length ? " Gaps mark incomplete days (" + esc([...new Set(gaps)].join(", ")) + ")." : ""}</p></div>
-          <div class="seg mini-seg" role="group" aria-label="Metric">
-            <button type="button" data-m="spend" aria-pressed="${dailyMetric === "spend"}">Spend</button>
-            <button type="button" data-m="ctr" aria-pressed="${dailyMetric === "ctr"}">CTR</button>
-          </div>
-        </div>
-        <div class="legend">${series.map(s => `<span><i style="background:${s.color}"></i>${esc(s.name)}</span>`).join("")}</div>
-        ${c.svg}<div class="tip"></div>`;
-      panel.querySelectorAll("[data-m]").forEach(b => b.addEventListener("click", () => { dailyMetric = b.dataset.m; renderTrends(); }));
-      const svg = panel.querySelector("svg"), tip = panel.querySelector(".tip"), cur = svg.querySelector(".cursor");
-      svg.addEventListener("pointermove", evt => {
-        const box = svg.getBoundingClientRect(), sx = (evt.clientX - box.left) * (c.W / box.width);
-        const i = Math.max(0, Math.min(c.n - 1, Math.round((sx - c.L) / ((c.W - c.L - c.R) / Math.max(c.n - 1, 1)))));
-        cur.setAttribute("x1", c.x(i)); cur.setAttribute("x2", c.x(i)); cur.style.display = "";
-        const f = v => v == null ? "no data" : (dailyMetric === "spend" ? usd.format(v) : pct(v));
-        tip.innerHTML = esc(labels[i] + " " + dates[i].slice(0, 4)) + "<br>" + series.map(s => esc(s.name) + ": " + f(s.values[i])).join("<br>");
-        tip.style.display = "block";
-        const pr = panel.getBoundingClientRect();
-        tip.style.left = Math.min(evt.clientX - pr.left + 14, pr.width - tip.offsetWidth - 8) + "px";
-        tip.style.top = (evt.clientY - pr.top - 10) + "px";
-      });
-      svg.addEventListener("pointerleave", () => { tip.style.display = "none"; cur.style.display = "none"; });
-      return panel;
+      const camps = [...new Set(rows.map(r => r.campaign))].sort();
+      const by = {}; rows.forEach(r => by[r.campaign + "|" + r.date] = r);
+      const val = r => !r ? null : state.dailyMetric === "spend" ? r.spend : (r.impressions ? r.clicks / r.impressions : null);
+      const colors = ["var(--blue)", "#E8833A"];
+      const series = camps.map((c, i) => ({ c, color: colors[i % 2], v: dates.map(d => val(by[c + "|" + d])) }));
+      const W = 560, H = 220, L = 46, R = 10, T = 10, Bm = 24;
+      const all = series.flatMap(s => s.v.filter(v => v != null)); const max = (Math.max(...all) || 1) * 1.1;
+      const x = i => L + i * (W - L - R) / Math.max(dates.length - 1, 1), y = v => T + (H - T - Bm) * (1 - v / max);
+      const fmt = v => state.dailyMetric === "spend" ? compactUsd.format(v) : (v * 100).toFixed(0) + "%";
+      let g = "";
+      for (let i = 0; i <= 4; i++) { const v = max * i / 4; g += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${L - 6}" y="${y(v) + 3}" text-anchor="end">${fmt(v)}</text>`; }
+      dates.forEach((d, i) => { if (i % 5 === 0) g += `<text x="${x(i)}" y="${H - 6}" text-anchor="middle">${+d.slice(8)} ${MONTHS[+d.slice(5, 7) - 1]}</text>`; });
+      series.forEach(s => { let p = "", pen = false; s.v.forEach((v, i) => { if (v == null) { pen = false; return; } p += (pen ? "L" : "M") + x(i) + " " + y(v) + " "; pen = true; }); g += `<path d="${p}" fill="none" stroke="${s.color}" stroke-width="2"/>`;
+        s.v.forEach((v, i) => { if (v != null) g += `<circle cx="${x(i)}" cy="${y(v)}" r="6" fill="transparent"><title>${s.c}, ${dates[i]}: ${state.dailyMetric === "spend" ? usd.format(v) : pct(v, 2)}</title></circle>`; }); });
+      document.getElementById("daily-chart").innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Daily ${state.dailyMetric} by campaign">${g}</svg>`;
+      document.getElementById("daily-legend").innerHTML = series.map(s => `<span><i style="background:${s.color}"></i>${esc(s.c)}</span>`).join("");
+      const gaps = rows.filter(r => r.impressions == null).map(r => r.date);
+      document.getElementById("daily-note").textContent = "The only source with genuine day-by-day delivery." + (gaps.length ? " Gaps mark incomplete days: " + [...new Set(gaps)].map(d => +d.slice(8) + " " + MONTHS[+d.slice(5, 7) - 1] + " " + d.slice(0, 4)).join(", ") + "." : "");
+      document.querySelectorAll("#daily-metric button").forEach(b => { b.setAttribute("aria-pressed", String(b.dataset.m === state.dailyMetric)); b.onclick = () => { state.dailyMetric = b.dataset.m; renderDaily(); }; });
     }
 
-    function multiPanel() {
-      const rows = (DATA.multichannel_monthly || []).slice().sort((a, b) => a.month < b.month ? -1 : 1);
-      if (!rows.length) return null;
-      const unbilled = new Set((DATA.reconciliation || [])
-        .filter(r => r.platform === "multichannel_platform" && r.status === "DELIVERED_NOT_BILLED").map(r => r.billing_month));
-      const years = [...new Set(rows.map(r => r.month.slice(0, 4)))].join("–");
-      const panel = document.createElement("div");
-      panel.className = "panel";
-      panel.innerHTML = `
-        <h3>Multichannel spend by campaign month, ${years}</h3>
-        <p class="note">One row per campaign, so this shows when campaigns were dated, not how spend flowed day to day.${unbilled.size ? " Red bars are months with no invoice." : ""}</p>
-        ${barChart(rows.map(r => +r.spend), rows.map(r => MONTHS[+r.month.slice(5) - 1]), v => "$" + numCompact.format(v),
-          "Multichannel spend by campaign month", i => unbilled.has(rows[i].month) ? "var(--bad)" : null,
-          (i, v) => monthLabel(rows[i].month) + ": " + usd.format(v))}`;
-      return panel;
-    }
-
-    function renderTrends() {
-      const host = document.getElementById("trends");
-      host.innerHTML = "";
-      const grid = document.createElement("div");
-      grid.className = "chart-grid";
-      const add = el => { if (el) grid.appendChild(el); };
-      if (current === "all" || current === "daily_campaign_platform") add(dailyPanel());
-      if (current === "all" || current === "multichannel_platform") add(multiPanel());
-      if (!grid.children.length) {
-        const e = document.createElement("div");
-        e.className = "empty";
-        e.textContent = current === "social_platform"
-          ? "Social data has no dates, so it can’t be shown over time. Its totals are included in the performance figures above."
-          : "This platform has no dated data to show over time.";
-        grid.appendChild(e);
-      }
-      if (grid.children.length === 1) grid.classList.add("single");
-      host.appendChild(grid);
-      if (current === "all") {
-        const n = document.createElement("p");
-        n.className = "caveat";
-        n.textContent = "Social is left out of trends because its data has no dates.";
-        host.appendChild(n);
-      }
-    }
-
-    // ---------- Reconciliation ----------
     const RECON = DATA.reconciliation || [];
-    const STATUS = {
-      MATCH: ["Match", "s-match"], VARIANCE: ["Variance", "s-variance"],
-      DELIVERED_NOT_BILLED: ["Delivered, not billed", "s-bad"], BILLED_NOT_DELIVERED: ["Billed, not delivered", "s-bad"]
-    };
-    const needsAttention = r => r.status !== "MATCH" || !!r.has_duplicate_invoice;
-
+    const needs = r => r.status !== "MATCH" || !!r.has_duplicate_invoice;
     function renderNetting() {
       const items = [];
-      RECON.forEach(r => {
-        const who = nameOf(r.platform) + ", " + monthLabel(r.billing_month);
-        if (r.status === "VARIANCE") items.push([who + ": billed amount differs", r.billed_amount - r.delivered_spend]);
+      RECON.forEach(r => { const who = nameOf(r.platform) + ", " + monthLabel(r.billing_month);
+        if (r.status === "VARIANCE") items.push([who + ": amount differs", r.billed_amount - r.delivered_spend]);
         if (r.status === "DELIVERED_NOT_BILLED") items.push([who + ": invoice never received", -r.delivered_spend]);
-        if (r.status === "BILLED_NOT_DELIVERED") items.push([who + ": billed, nothing delivered", +r.billed_amount]);
-        if (r.has_duplicate_invoice) items.push([who + ": invoice received twice", +r.billed_amount]);
-      });
-      const host = document.getElementById("netting");
-      if (!items.length) {
-        host.innerHTML = `<p class="netting-head">Every invoice matches delivered spend in the latest run.</p>`;
-        return;
-      }
+        if (r.status === "BILLED_NOT_DELIVERED") items.push([who + ": billed, nothing delivered", r.billed_amount]);
+        if (r.has_duplicate_invoice) items.push([who + ": invoice received twice", r.billed_amount]); });
       items.sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
-      const net = items.reduce((a, [, v]) => a + v, 0);
-      const gross = items.reduce((a, [, v]) => a + Math.abs(v), 0);
-      const scale = Math.max(...items.map(([, v]) => Math.abs(v)), Math.abs(net)) || 1;
-      const bar = (v, cls) => {
-        const w = Math.max(Math.abs(v) / scale * 50, 0.6);
-        return `<div class="net-track"><span class="net-bar ${cls}" style="left:${v >= 0 ? 50 : 50 - w}%;width:${w}%"></span></div>`;
-      };
-      host.innerHTML = `
-        <p class="netting-head">At the total level, billed and delivered differ by ${money(Math.abs(net))}. Line by line, ${items.length} problems worth ${money(gross)} sit underneath.</p>
-        <p class="note">Each bar is billed minus delivered. Bars to the right are overbilling, bars to the left are underbilling.</p>
-        <div class="net-rows">
-          ${items.map(([n, v]) => `<div class="net-row"><span>${esc(n)}</span>${bar(v, v >= 0 ? "pos" : "neg")}<span class="net-amt">${signedMoney(v)}</span></div>`).join("")}
-          <div class="net-row sum"><span>What the total shows</span>${bar(net, "total")}<span class="net-amt">${signedMoney(net)}</span></div>
-        </div>`;
+      const net = items.reduce((a, b) => a + b[1], 0), gross = items.reduce((a, b) => a + Math.abs(b[1]), 0);
+      const sm = v => (v > 0 ? "+" : v < 0 ? "−" : "") + (Math.abs(v) >= 1e6 ? compactUsd.format(Math.abs(v)) : usd.format(Math.abs(v)));
+      document.getElementById("netting").innerHTML = items.length
+        ? `<p class="net-head">Billed and delivered differ by ${sm(net).replace("+", "")} in total, but ${items.length} line-level problems worth ${compactUsd.format(gross)} sit underneath.</p><div class="net">` +
+          items.map(([n, v]) => `<div class="net-row"><span>${esc(n)}</span><b class="${v >= 0 ? "down" : ""}">${sm(v)}</b></div>`).join("") +
+          `<div class="net-row"><strong>What the total shows</strong><b>${sm(net)}</b></div></div>`
+        : `<p class="net-head">Every invoice matches delivered spend.</p>`;
     }
-
-    const attentionBox = document.getElementById("attention-only");
-    attentionBox.onchange = renderRecon;
+    const att = document.getElementById("attention-only");
+    att.onchange = renderRecon;
     function renderRecon() {
-      const scoped = RECON.filter(r => current === "all" || r.platform === current);
-      const rows = scoped.filter(r => !attentionBox.checked || needsAttention(r))
-        .sort((a, b) => (a.platform + a.billing_month) < (b.platform + b.billing_month) ? -1 : 1);
-      const flagged = scoped.filter(needsAttention).length;
-      document.getElementById("recon-count").textContent =
-        `${flagged} ${flagged === 1 ? "line needs" : "lines need"} attention${current === "all" ? "" : " for " + nameOf(current)}. Showing ${rows.length}.`;
-      document.getElementById("recon-body").innerHTML = rows.map(r => {
-        const variance = r.delivered_spend != null && r.billed_amount != null ? r.billed_amount - r.delivered_spend : null;
-        const [label, cls] = STATUS[r.status] || [r.status, "s-variance"];
-        return `<tr${needsAttention(r) ? ' class="attention"' : ""}>
-          <td>${esc(nameOf(r.platform))}</td><td class="left">${esc(monthLabel(r.billing_month))}</td>
-          <td>${r.delivered_spend == null ? "–" : usd.format(r.delivered_spend)}</td><td>${r.billed_amount == null ? "–" : usd.format(r.billed_amount)}</td>
-          <td>${variance == null ? "–" : (Math.abs(variance) < 0.005 ? usd.format(0) : signedMoney(variance))}</td>
-          <td class="left">${r.has_duplicate_invoice ? '<span class="dup">Duplicate received</span>' : "Single"}</td>
-          <td class="left"><span class="status-pill ${cls}">${esc(label)}</span></td></tr>`;
-      }).join("") || `<tr><td colspan="7" class="left">No lines need attention for this platform.</td></tr>`;
+      const rows = RECON.filter(r => !att.checked || needs(r));
+      const flagged = RECON.filter(needs).length;
+      document.getElementById("recon-count").textContent = `${flagged} ${flagged === 1 ? "line needs" : "lines need"} attention. Showing ${rows.length}.`;
+      const ST = { MATCH: ["Match", "p-ok"], VARIANCE: ["Variance", "p-var"], DELIVERED_NOT_BILLED: ["Not billed", "p-bad"], BILLED_NOT_DELIVERED: ["Not delivered", "p-bad"] };
+      document.getElementById("recon-table").innerHTML = `<thead><tr><th>Platform</th><th>Month</th><th>Delivered</th><th>Billed</th><th>Invoice</th><th>Status</th></tr></thead><tbody>` +
+        rows.map(r => { const [l, c] = ST[r.status] || [r.status, "p-var"]; return `<tr class="${needs(r) ? "attention" : ""}"><td>${esc(nameOf(r.platform))}</td><td>${esc(monthLabel(r.billing_month))}</td>
+          <td>${r.delivered_spend == null ? "–" : usd0.format(r.delivered_spend)}</td><td>${r.billed_amount == null ? "–" : usd0.format(r.billed_amount)}</td>
+          <td>${r.has_duplicate_invoice ? '<span class="down">Duplicate</span>' : "Single"}</td><td><span class="pill ${c}">${l}</span></td></tr>`; }).join("") + `</tbody>`;
     }
-
-    // ---------- Data quality matrix ----------
     function renderDQ() {
       const dq = DATA.dq_results || [];
-      const runs = [...new Set(dq.map(r => r.run_at))].sort().slice(-8);
+      const runs = [...new Set(dq.map(r => r.run_at))].sort().slice(-6).reverse();
       const checks = [...new Set(dq.map(r => r.check_name))].sort();
-      const cell = {};
-      dq.forEach(r => { cell[r.check_name + "|" + r.run_at] = r; });
-      const latest = runs[runs.length - 1];
-      const latestRows = dq.filter(r => r.run_at === latest);
-      const failed = latestRows.filter(r => r.status !== "PASS").length;
-      const time = iso => { const d = new Date(iso); return isNaN(d) ? iso : d.toISOString().slice(11, 19); };
-      const day = iso => { const d = new Date(iso); return isNaN(d) ? "" : d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" }); };
-      document.getElementById("dq-summary").textContent = latest
-        ? (failed ? `${failed} of ${latestRows.length} checks failed in the latest run (${fmtStamp(latest)}).`
-                  : `All ${latestRows.length} checks passed in the latest run (${fmtStamp(latest)}).`) +
-          ` Each row is a check; each column is a run, newest on the right${runs.length === 8 ? ", showing the last 8 runs" : ""}.`
-        : "No check results yet.";
-      document.getElementById("dq-head").innerHTML = `<tr><th>Check</th>${runs.map(r => {
-        const anyFail = dq.some(x => x.run_at === r && x.status !== "PASS");
-        return `<th class="${anyFail ? "fail-col" : ""}" style="text-align:center">${esc(day(r))}<br>${esc(time(r))}</th>`;
-      }).join("")}</tr>`;
-      document.getElementById("dq-body").innerHTML = checks.map(c => `<tr><td>${esc(c)}</td>${runs.map(r => {
-        const x = cell[c + "|" + r];
-        if (!x) return `<td class="cell"><span class="dot none" title="Not part of this run"></span><span style="position:absolute;left:-9999px">not run</span></td>`;
-        const fail = x.status !== "PASS";
-        const detail = fail ? `Failed: expected ${num.format(x.expected)}, found ${num.format(x.actual)}` : "Passed";
-        return `<td class="cell"><span class="dot ${fail ? "fail" : "pass"}" title="${esc(detail)}"></span><span style="position:absolute;left:-9999px">${fail ? "failed" : "passed"}</span></td>`;
-      }).join("")}</tr>`).join("");
-      const anyHistFail = dq.some(x => x.status !== "PASS");
-      document.getElementById("dq-foot").textContent = anyHistFail
-        ? "Orange marks a failed check. Hover over a dot to see what was expected and what was found. One failure was triggered deliberately, by deleting a row, to prove the checks can fail; the table was then restored with Delta time travel."
-        : "Hover over a dot to see the result of each check.";
+      const cell = {}; dq.forEach(r => cell[r.check_name + "|" + r.run_at] = r);
+      const last = runs[0]; const lr = dq.filter(r => r.run_at === last); const f = lr.filter(r => r.status !== "PASS").length;
+      document.getElementById("dq-summary").textContent = last ? (f ? `${f} of ${lr.length} checks failed in the latest run (${stamp(last)}).` : `All ${lr.length} checks passed in the latest run (${stamp(last)}).`) : "No results yet.";
+      const hd = iso => { const d = new Date(iso); return isNaN(d) ? iso : d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" }) + "<br>" + d.toISOString().slice(11, 16); };
+      document.getElementById("dq-table").innerHTML = `<thead><tr><th>Check</th>${runs.map(r => `<th style="text-align:center">${hd(r)}</th>`).join("")}</tr></thead><tbody>` +
+        checks.map(c => `<tr><td>${esc(c)}</td>${runs.map(r => { const x = cell[c + "|" + r]; if (!x) return `<td class="cell"><span class="dot none"></span><span class="sr">not run</span></td>`;
+          const bad = x.status !== "PASS"; return `<td class="cell"><span class="dot ${bad ? "fail" : "pass"}" title="${bad ? "Failed: expected " + x.expected + ", found " + x.actual : "Passed"}"></span><span class="sr">${bad ? "failed" : "passed"}</span></td>`; }).join("")}</tr>`).join("") + `</tbody>`;
     }
 
-    function render() {
-      seg.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.key === current)));
-      renderKpis(); renderTrends(); renderRecon();
+    // ---------- Views ----------
+    const VIEWS = ["trends", "clients", "media", "trust"];
+    function showView() {
+      const h = location.hash.replace("#", "");
+      state.view = VIEWS.includes(h) ? h : "trends";
+      document.querySelectorAll("[data-panel]").forEach(p => p.hidden = p.dataset.panel !== state.view);
+      document.querySelectorAll("nav.tabs a").forEach(a => a.toggleAttribute("aria-current", a.dataset.view === state.view) || a.setAttribute("aria-current", a.dataset.view === state.view ? "page" : "false"));
+      document.querySelectorAll("nav.tabs a").forEach(a => { if (a.dataset.view === state.view) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
+      const multi = state.view !== "trust";
+      document.getElementById("kpi-row").hidden = !multi;
+      document.getElementById("filters").hidden = !multi;
     }
+    document.querySelectorAll("[data-unit]").forEach(b => b.onclick = () => { state.unit = b.dataset.unit; renderAll(); });
 
-    renderNetting(); renderDQ(); render();
+    function renderAll() {
+      renderChips(); renderKpis(); renderTreemap(); renderMonthChart(); renderMarketTable(); renderClients(); renderMedia();
+      document.querySelectorAll("[data-unit]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.unit === state.unit)));
+    }
+    window.addEventListener("hashchange", showView);
+    showView(); renderAll(); renderPlatforms(); renderDaily(); renderNetting(); renderRecon(); renderDQ();
   }
 })();
 </script>
