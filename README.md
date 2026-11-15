@@ -7,7 +7,15 @@ End-to-end data engineering project on **Databricks**: API extraction from Kaggl
 ![Delta Lake](https://img.shields.io/badge/Delta%20Lake-00ADD4?style=flat&logo=delta&logoColor=white)
 ![SQL](https://img.shields.io/badge/SQL-4479A1?style=flat&logo=databricks&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)
-![Power BI](https://img.shields.io/badge/Power%20BI-in%20progress-F2C811?style=flat&logo=powerbi&logoColor=black)
+![Power BI](https://img.shields.io/badge/Power%20BI-F2C811?style=flat&logo=powerbi&logoColor=black)
+![GitHub Pages](https://img.shields.io/badge/Live%20dashboard-GitHub%20Pages-222222?style=flat&logo=github&logoColor=white)
+
+### [Open the live dashboard](https://balamurugans-data.github.io/media-campaign-pipeline/)
+
+A public web dashboard that reads the pipeline's latest verified export: market trends, client and media-channel breakdowns, all-platform KPIs, the billing reconciliation and the data quality history.
+![Live dashboard](https://img.shields.io/badge/Live%20dashboard-online-2F6FDE?style=flat&logo=githubpages&logoColor=white)
+
+**[Open the live dashboard](https://balamurugans-data.github.io/media-campaign-pipeline/)**, refreshed from the pipeline's latest export.
 
 ---
 
@@ -21,9 +29,11 @@ End-to-end data engineering project on **Databricks**: API extraction from Kaggl
 - [KPIs and the averaging trap](#kpis-and-the-averaging-trap)
 - [Data quality](#data-quality)
 - [Finance reconciliation](#finance-reconciliation)
+- [Live dashboard](#live-dashboard)
 - [Key engineering decisions](#key-engineering-decisions)
 - [Data limitations](#data-limitations)
 - [Repository structure and run order](#repository-structure-and-run-order)
+- [Power BI report](#power-bi-report)
 - [Roadmap](#roadmap)
 
 ---
@@ -56,7 +66,15 @@ flowchart LR
     S4 --> REC
     SU --> DQ[Automated data quality checks]
     G --> DQ
-    G -.-> PBI[Power BI report - in progress]
+    G --> PUB[Publish notebook - validated JSON export]
+    REC --> PUB
+    DQ --> PUB
+    PUB -->|GitHub API| WEB[Live dashboard on GitHub Pages]
+    G --> PBI[Power BI report]
+    G --> PUB[Publish notebook - validated JSON export]
+    REC --> PUB
+    DQ --> PUB
+    PUB -->|GitHub API| WEB[Live dashboard on GitHub Pages]
 ```
 
 | Layer | Purpose | Rule |
@@ -91,6 +109,7 @@ Extraction uses the Kaggle API from a Databricks notebook. The API token is stor
 - A **manifest** records each run's files, row counts and status
 - Raw files loaded into bronze Delta tables as text, with only a technical rename of characters Delta does not allow in column names
 - Extraction is **idempotent**: rerunning overwrites the same day's files without creating duplicates
+- **Snapshot loading:** each run lands a full copy of every source in a new dated folder, and bronze tables load only the latest one, so scheduled daily runs never stack copies, while older snapshots stay available for audit
 
 </details>
 
@@ -165,12 +184,18 @@ erDiagram
         bigint campaign_key
         string platform
         string campaign_id
+        string client
+        string market
+        string media_channel
+        string campaign_type
     }
 ```
 
 - **Surrogate keys** use `xxhash64`, which is deterministic, so keys stay stable across rebuilds and the fact table computes them without lookups
 - **Campaign key = platform + campaign_id**, because campaign IDs are only unique within a platform
+- **Client, market, media channel and campaign type** come from the multichannel source through a left join; the other sources have no such attributes and are labelled `Unassigned` rather than dropped
 - **Unknown member:** `date_key = 0` represents undated social records, so they are never silently dropped by joins
+- **Campaign attributes:** client, market, media channel and campaign type come from the multichannel source via a `LEFT JOIN`; daily and social campaigns are labelled `Unassigned` rather than dropped, and the campaign count was verified unchanged after the join
 - Verified with an **orphan check**: zero fact rows without a matching dimension row
 
 ---
@@ -246,6 +271,32 @@ The simulated billing feed contains five planted discrepancies. All five were ca
 
 ---
 
+## Live dashboard
+
+**[balamurugans-data.github.io/media-campaign-pipeline](https://balamurugans-data.github.io/media-campaign-pipeline/)**
+
+| Tab | What it shows |
+|---|---|
+| **Market Trends** | Spend, impressions, clicks, CTR and CPC with change against the previous period; a clickable market treemap; monthly spend with month-over-month change; market summary |
+| **Client Overview** | Spend by client and media channel with heat-map shading, in dollars or percentages |
+| **Media Breakdown** | Market by channel splits, period-on-period change by market and channel, channel shares and summary |
+| **Platforms & Trust** | All-platform KPIs, the daily campaign trend, what the billing total hides, the reconciliation and the quality check history |
+
+<details>
+<summary><b>How it stays live, and why it is safe</b> (click to expand)</summary>
+
+1. The pipeline runs in Databricks.
+2. `04_publish_dashboard_data` exports the latest gold results and quality checks as `docs/data/dashboard.json`, **validates** the export (spend must match the fact table to the cent, and breakdown spend must match multichannel spend), and commits it through the GitHub API.
+3. GitHub Pages serves the dashboard, which reads that file on every visit and shows when it was refreshed.
+
+The browser never connects to Databricks: no credentials are ever placed in a public page. If the export cannot be loaded, the page falls back to an embedded snapshot and says so.
+
+</details>
+
+**Honest labelling:** the data covers one year, so changes are always labelled with what they compare (for example "vs Q2" or "H2 vs H1") instead of a year-over-year figure that cannot exist. Market and channel shares are close to equal because the multichannel dataset is synthetic, and the page says so.
+
+---
+
 ## Key engineering decisions
 
 <details>
@@ -271,20 +322,35 @@ The simulated billing feed contains five planted discrepancies. All five were ca
 - Multichannel has one row per campaign, so its dates are campaign dates, not daily delivery.
 - `Acquisition_Cost` is interpreted as total campaign spend; the name is ambiguous.
 - Social data has no dates and is reported as campaign-level totals.
+- Multichannel markets, clients and channels each hold a near-equal share of spend, another sign the dataset is synthetic.
+- Market, client and channel shares are almost exactly equal because the multichannel data is synthetic; real media mixes are far less even.
 - The finance billing feed is simulated.
 
 ---
 
 ## Repository structure and run order
 
-| Notebook | Purpose |
-|---|---|
-| [`01_bronze_and_silver`](01_bronze_and_silver.ipynb) | Kaggle extraction, bronze tables, silver tables for all sources |
-| [`00_simulate_finance_billing`](00_simulate_finance_billing.ipynb) | Source simulator: generates the billing feed |
-| [`02_gold`](02_gold.ipynb) | Star schema, KPI view, reconciliation view |
-| [`03_data_quality`](03_data_quality.ipynb) | Automated checks and results history |
+| Order | Notebook | Purpose |
+|---|---|---|
+| 1 | [`01_bronze_and_silver`](01_bronze_and_silver.ipynb) | Kaggle extraction, bronze tables (latest snapshot), silver tables for all platforms |
+| 2 | [`00_simulate_finance_billing`](00_simulate_finance_billing.ipynb) | Source simulator: generates the billing feed from delivered spend |
+| 3 | [`01b_finance_billing`](01b_finance_billing.ipynb) | Billing bronze and silver, duplicates flagged |
+| 4 | [`02_gold`](02_gold.ipynb) | Star schema, KPI view, reconciliation view |
+| 5 | [`03_data_quality`](03_data_quality.ipynb) | Automated checks appended to a results history |
+| 6 | [`04_publish_dashboard_data`](04_publish_dashboard_data.ipynb) | Validated JSON export committed to GitHub for the live dashboard |
 
-**Current run order:** platform sections of `01` → `00` → billing sections of `01` → `02` → `03`. The billing simulator depends on the silver layer, so the order is not yet a straight line; orchestration (checkpoint 6) will formalise it.
+`docs/index.html` is the live dashboard and `docs/data/dashboard.json` is its data, refreshed by notebook 6. Orchestration (checkpoint 6) runs the six notebooks as one scheduled job.
+
+---
+
+## Power BI report
+
+The same gold layer also feeds a Power BI report used for internal-style analysis: a star schema with many-to-one relationships, KPIs as DAX measures, and a reconciliation page. Building it surfaced two useful lessons:
+
+- **A totals bug caught by checking the total row:** CPA showed $73,427 overall because total spend included multichannel while total conversions did not. Restricting CPA's spend to rows that report conversions fixed it to $5.94.
+- **Auto-detected relationships needed correcting:** Power BI linked two dimensions on a text column, creating a second filter path and silently deactivating the fact-to-campaign relationship.
+
+Every DAX measure was validated against the SQL KPI view. The report is being updated to use the new client, market and channel attributes.
 
 ---
 
@@ -294,13 +360,13 @@ The simulated billing feed contains five planted discrepancies. All five were ca
 - [x] Checkpoint 2: Silver layer
 - [x] Checkpoint 3: Gold layer star schema and KPIs
 - [x] Checkpoint 4: Data quality checks and finance reconciliation
-- [ ] Checkpoint 5: Power BI reporting
-- [ ] Checkpoint 6: Orchestration on Azure with ADF
+- [x] Checkpoint 5: Reporting in Power BI and a live public dashboard
+- [ ] Checkpoint 6: Orchestration (Databricks Workflows, then Azure Data Factory) — in progress
 - [ ] Checkpoint 7: Portfolio finish
 
 **Backlog**
 
-- [ ] Client attribute in the model (from multichannel `Company`)
+- [x] Client attribute in the model (client, market, media channel and campaign type)
 - [ ] Client-level row-level security in Power BI
 - [ ] Extra quality check: unified silver row count against the three source tables
 - [ ] Agentic Q&A assistant that answers questions like "how many clicks did this client get?" from the gold layer
