@@ -8,6 +8,7 @@ End-to-end data engineering project on **Databricks**: API extraction from Kaggl
 ![SQL](https://img.shields.io/badge/SQL-4479A1?style=flat&logo=databricks&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)
 ![Power BI](https://img.shields.io/badge/Power%20BI-F2C811?style=flat&logo=powerbi&logoColor=black)
+![Azure Data Factory](https://img.shields.io/badge/Azure%20Data%20Factory-0078D4?style=flat&logo=microsoftazure&logoColor=white)
 ![GitHub Pages](https://img.shields.io/badge/Live%20dashboard-GitHub%20Pages-222222?style=flat&logo=github&logoColor=white)
 
 ### [Open the live dashboard](https://balamurugans-data.github.io/media-campaign-pipeline/)
@@ -30,6 +31,7 @@ A public web dashboard that reads the pipeline's latest verified export: market 
 - [Data quality](#data-quality)
 - [Finance reconciliation](#finance-reconciliation)
 - [Live dashboard](#live-dashboard)
+- [Orchestration](#orchestration)
 - [Key engineering decisions](#key-engineering-decisions)
 - [Data limitations](#data-limitations)
 - [Repository structure and run order](#repository-structure-and-run-order)
@@ -297,6 +299,40 @@ The browser never connects to Databricks: no credentials are ever placed in a pu
 
 ---
 
+## Orchestration
+
+The whole pipeline runs every day without manual steps: **Azure Data Factory** owns the schedule and triggers a **Databricks job** that runs the six notebooks in order.
+
+```mermaid
+flowchart LR
+    T[ADF schedule trigger - daily 06:00 IST] --> P[ADF pipeline pl_run_media_pipeline]
+    P -->|managed identity| KV[(Azure Key Vault - Databricks token)]
+    P -->|Jobs API run-now| J[Databricks job]
+    P -->|polls runs/get every 60s| J
+    J --> N1[01 bronze and silver] --> N2[00 billing simulator] --> N3[01b billing] --> N4[02 gold] --> N5[03 data quality] --> N6[04 publish]
+    N6 -->|GitHub API| GH[docs/data/dashboard.json] --> WEB[Live dashboard]
+    J -.->|failure email| E[Alert]
+```
+
+<details>
+<summary><b>Design decisions</b> (click to expand)</summary>
+
+- **Why ADF triggers Databricks through the REST API:** the project runs on Databricks Free Edition, which is not an Azure Databricks workspace, so ADF's native notebook activity cannot reach it. Triggering a Databricks job through the Jobs API is a common enterprise pattern for compute that lives outside Azure.
+- **One scheduler only:** the schedule lives in ADF; the Databricks job has none, so the pipeline never runs twice.
+- **No secrets in the pipeline:** the token sits in Azure Key Vault and is read at runtime with the factory's managed identity, which holds only the read-only *Key Vault Secrets User* role. Secure input and output keep the token out of run logs. Rotating the token means updating one secret, with no pipeline change.
+- **No retries on the start call:** if the request timed out after Databricks had already started the job, a retry would start a second run. Status checks do retry, because asking twice is harmless.
+- **The orchestrator fails when the job fails:** a final check fails the ADF run unless Databricks reports `SUCCESS`. Otherwise ADF would show green whenever its API calls worked, even if the pipeline itself had failed.
+- **Every layer stops bad data:** a failed task stops the Databricks job, and the publish notebook validates the export before committing, so the live dashboard keeps the last good data instead of showing broken numbers.
+- **Snapshot-safe daily runs:** each run lands a new dated copy of every source, and bronze loads only the latest one, so repeated runs never stack duplicate data.
+
+</details>
+
+**Running cost:** Databricks Free Edition is free; one ADF run a day with its polling loop and the Key Vault reads costs well under a dollar a month, watched by an Azure budget alert.
+
+The ADF pipeline and trigger definitions are version-controlled in [`adf/`](adf/) through ADF's GitHub integration.
+
+---
+
 ## Key engineering decisions
 
 <details>
@@ -339,7 +375,7 @@ The browser never connects to Databricks: no credentials are ever placed in a pu
 | 5 | [`03_data_quality`](03_data_quality.ipynb) | Automated checks appended to a results history |
 | 6 | [`04_publish_dashboard_data`](04_publish_dashboard_data.ipynb) | Validated JSON export committed to GitHub for the live dashboard |
 
-`docs/index.html` is the live dashboard and `docs/data/dashboard.json` is its data, refreshed by notebook 6. Orchestration (checkpoint 6) runs the six notebooks as one scheduled job.
+`docs/index.html` is the live dashboard and `docs/data/dashboard.json` is its data, refreshed by notebook 6. A Databricks job runs the six notebooks in this order, triggered daily by the ADF pipeline in [`adf/`](adf/).
 
 ---
 
@@ -361,7 +397,7 @@ Every DAX measure was validated against the SQL KPI view. The report is being up
 - [x] Checkpoint 3: Gold layer star schema and KPIs
 - [x] Checkpoint 4: Data quality checks and finance reconciliation
 - [x] Checkpoint 5: Reporting in Power BI and a live public dashboard
-- [ ] Checkpoint 6: Orchestration (Databricks Workflows, then Azure Data Factory) — in progress
+- [x] Checkpoint 6: Daily orchestration with Azure Data Factory triggering a Databricks job
 - [ ] Checkpoint 7: Portfolio finish
 
 **Backlog**
