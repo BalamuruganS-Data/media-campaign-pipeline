@@ -1,0 +1,15 @@
+{
+	"name": "adf-media-pipeline",
+	"properties": {
+		"trustModeClaimForMi": {
+			"value": "Disabled",
+			"editable": true
+		}
+	},
+	"location": "indiasouthcentral",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "ed9b6c4a-27c5-4147-9919-133dcb9ea97f",
+		"tenantId": "63701432-c045-4f47-b064-bf468415b45d"
+	}
+}

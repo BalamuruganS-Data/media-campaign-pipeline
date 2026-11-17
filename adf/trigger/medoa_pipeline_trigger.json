@@ -1,0 +1,37 @@
+{
+	"name": "medoa_pipeline_trigger",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Started",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "pl_run_media_pipeline",
+					"type": "PipelineReference"
+				},
+				"parameters": {
+					"workspace_url": "https://dbc-20352c5b-2b01.cloud.databricks.com",
+					"job_id": "543875570015037",
+					"key_vault_url": "https://kv-media-pipeline.vault.azure.net"
+				}
+			}
+		],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Day",
+				"interval": 1,
+				"startTime": "2026-11-17T13:43:00",
+				"timeZone": "India Standard Time",
+				"schedule": {
+					"minutes": [
+						30
+					],
+					"hours": [
+						9
+					]
+				}
+			}
+		}
+	}
+}

@@ -1,0 +1,274 @@
+{
+	"name": "pl_run_media_pipeline",
+	"properties": {
+		"description": "Starts the Databricks job that runs the media campaign pipeline (01 > 00 > 01b > 02 > 03 > 04), waits for it to finish, and fails if the run did not succeed. The Databricks token is read from Key Vault at runtime using the factory's managed identity.",
+		"activities": [
+			{
+				"name": "Get Databricks token",
+				"description": "Reads the secret from Key Vault with the factory's managed identity. Secure output keeps the token out of run logs.",
+				"type": "WebActivity",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.00:05:00",
+					"retry": 2,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": true,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "GET",
+					"url": {
+						"value": "@concat(pipeline().parameters.key_vault_url, '/secrets/databricks-token?api-version=7.4')",
+						"type": "Expression"
+					},
+					"authentication": {
+						"type": "MSI",
+						"resource": "https://vault.azure.net"
+					}
+				}
+			},
+			{
+				"name": "Start Databricks job",
+				"description": "Calls the Jobs API run-now endpoint. No retries, so a slow response can never start the job twice.",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Get Databricks token",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.00:05:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": true
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"headers": {
+						"Authorization": {
+							"value": "@concat('Bearer ', activity('Get Databricks token').output.value)",
+							"type": "Expression"
+						},
+						"Content-Type": "application/json"
+					},
+					"url": {
+						"value": "@concat(pipeline().parameters.workspace_url, '/api/2.1/jobs/run-now')",
+						"type": "Expression"
+					},
+					"body": {
+						"value": "@json(concat('{\"job_id\": ', pipeline().parameters.job_id, '}'))",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Save run id",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Start Databricks job",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "run_id",
+					"value": {
+						"value": "@string(activity('Start Databricks job').output.run_id)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Wait for job to finish",
+				"description": "Checks the run every 60 seconds until it reaches a final state, for at most 90 minutes.",
+				"type": "Until",
+				"dependsOn": [
+					{
+						"activity": "Save run id",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@or(equals(variables('run_state'), 'TERMINATED'), or(equals(variables('run_state'), 'SKIPPED'), equals(variables('run_state'), 'INTERNAL_ERROR')))",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "Wait 60 seconds",
+							"type": "Wait",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"waitTimeInSeconds": 60
+							}
+						},
+						{
+							"name": "Check run status",
+							"type": "WebActivity",
+							"dependsOn": [
+								{
+									"activity": "Wait 60 seconds",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.00:02:00",
+								"retry": 2,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": true
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"method": "GET",
+								"headers": {
+									"Authorization": {
+										"value": "@concat('Bearer ', activity('Get Databricks token').output.value)",
+										"type": "Expression"
+									}
+								},
+								"url": {
+									"value": "@concat(pipeline().parameters.workspace_url, '/api/2.1/jobs/runs/get?run_id=', variables('run_id'))",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Save run state",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Check run status",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "run_state",
+								"value": {
+									"value": "@activity('Check run status').output.state.life_cycle_state",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Save result state",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Save run state",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "result_state",
+								"value": {
+									"value": "@coalesce(activity('Check run status').output.state?.result_state, '')",
+									"type": "Expression"
+								}
+							}
+						}
+					],
+					"timeout": "0.01:30:00"
+				}
+			},
+			{
+				"name": "Did the job succeed",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Wait for job to finish",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(variables('result_state'), 'SUCCESS')",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "Fail pipeline",
+							"type": "Fail",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"message": {
+									"value": "@concat('Databricks run ', variables('run_id'), ' ended with life cycle state ', variables('run_state'), ' and result ', variables('result_state'))",
+									"type": "Expression"
+								},
+								"errorCode": "DATABRICKS_JOB_FAILED"
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"workspace_url": {
+				"type": "string",
+				"defaultValue": "https://dbc-20352c5b-2b01.cloud.databricks.com"
+			},
+			"job_id": {
+				"type": "string",
+				"defaultValue": "543875570015037"
+			},
+			"key_vault_url": {
+				"type": "string",
+				"defaultValue": "https://kv-media-pipeline.vault.azure.net"
+			}
+		},
+		"variables": {
+			"run_id": {
+				"type": "String"
+			},
+			"run_state": {
+				"type": "String",
+				"defaultValue": "PENDING"
+			},
+			"result_state": {
+				"type": "String"
+			}
+		},
+		"annotations": [
+			"media-campaign-pipeline"
+		],
+		"lastPublishTime": "2026-11-17T13:40:58Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}
