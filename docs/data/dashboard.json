@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-18T04:03:45Z",
+ "generated_at": "2026-11-19T04:03:36Z",
  "platforms": [
   {
    "platform": "multichannel_platform",
@@ -19255,6 +19255,54 @@
   },
   {
    "run_at": "2026-11-18T04:03:31Z",
+   "check_name": "spend_silver_vs_fact",
+   "layer": "gold",
+   "expected": 2501082858.23,
+   "actual": 2501082858.23,
+   "status": "PASS"
+  },
+  {
+   "run_at": "2026-11-19T04:03:25Z",
+   "check_name": "daily_rows_bronze_vs_silver",
+   "layer": "silver",
+   "expected": 60.0,
+   "actual": 60.0,
+   "status": "PASS"
+  },
+  {
+   "run_at": "2026-11-19T04:03:25Z",
+   "check_name": "multichannel_rows_bronze_vs_silver",
+   "layer": "silver",
+   "expected": 200000.0,
+   "actual": 200000.0,
+   "status": "PASS"
+  },
+  {
+   "run_at": "2026-11-19T04:03:25Z",
+   "check_name": "null_dates_non_social",
+   "layer": "silver",
+   "expected": 0.0,
+   "actual": 0.0,
+   "status": "PASS"
+  },
+  {
+   "run_at": "2026-11-19T04:03:25Z",
+   "check_name": "orphan_campaigns",
+   "layer": "gold",
+   "expected": 0.0,
+   "actual": 0.0,
+   "status": "PASS"
+  },
+  {
+   "run_at": "2026-11-19T04:03:25Z",
+   "check_name": "social_rows_bronze_vs_silver",
+   "layer": "silver",
+   "expected": 1143.0,
+   "actual": 1143.0,
+   "status": "PASS"
+  },
+  {
+   "run_at": "2026-11-19T04:03:25Z",
    "check_name": "spend_silver_vs_fact",
    "layer": "gold",
    "expected": 2501082858.23,
